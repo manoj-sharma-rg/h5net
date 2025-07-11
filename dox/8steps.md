@@ -4,7 +4,12 @@ created this file 8steps.md
 
 scaffold structure
 Scaffold the backend API in api/
-
+    dotnet new webapi -o api --no-https
+Scaffold the frontend in ui/ 
+     npm create vite@latest ui -- --template react-ts
+     npm install
+     npm run dev
+     
 Initializing Python:    python -m venv env312 & env312\Scripts\activate & pip install fastapi uvicorn pydantic httpx pluggy PyYAML xmlschema python-dateutil
 Adding minimal FastAPI and React app scaffolds
 Filling in the base classes and sample plugin
