@@ -12,8 +12,57 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+using System.Reflection;
+
+// Helper to auto-discover translators
+static IPmsTranslator? GetTranslator(string pmscode)
+{
+    var translatorType = Assembly.GetExecutingAssembly()
+        .GetTypes()
+        .FirstOrDefault(t => typeof(IPmsTranslator).IsAssignableFrom(t) && !t.IsInterface && !t.IsAbstract &&
+            string.Equals((string?)t.GetProperty("PmsCode")?.GetValue(Activator.CreateInstance(t)), pmscode, StringComparison.OrdinalIgnoreCase));
+    return translatorType != null ? (IPmsTranslator?)Activator.CreateInstance(translatorType) : null;
+}
+
 // Placeholder PMS API endpoint
 app.MapPost("/pms/{pmscode}", async (string pmscode, HttpRequest request) =>
+{
+    try
+    {
+        // Read PMS feed from body
+        string pmsFeed;
+        using (var reader = new StreamReader(request.Body, Encoding.UTF8))
+        {
+            pmsFeed = await reader.ReadToEndAsync();
+        }
+        if (string.IsNullOrWhiteSpace(pmsFeed))
+        {
+            return Results.BadRequest("PMS feed is required in the request body.");
+        }
+        // Validate PMS code
+        if (string.IsNullOrWhiteSpace(pmscode) || !System.Text.RegularExpressions.Regex.IsMatch(pmscode, "^[a-zA-Z0-9_-]+$"))
+        {
+            return Results.BadRequest("Invalid PMS code. Only letters, numbers, dash, and underscore are allowed.");
+        }
+        // Auto-discover and load the correct translator
+        var translator = GetTranslator(pmscode);
+        if (translator == null)
+        {
+            return Results.NotFound($"No translator found for PMS code: {pmscode}");
+        }
+        // Use the translator to process the feed
+        var rgbridgeMessage = await translator.TranslateToRgbridgeAsync(pmsFeed);
+        // Return the translated message
+        return Results.Text(rgbridgeMessage, "application/xml");
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Error processing PMS feed: {ex.Message}");
+    }
+})
+.WithName("PmsMessageIntake");
+
+app.MapPost("/mappings/{pmscode}", async (string pmscode, HttpRequest request) =>
 {
     try
     {
@@ -47,14 +96,27 @@ app.MapPost("/pms/{pmscode}", async (string pmscode, HttpRequest request) =>
             var metaPath = Path.Combine(pmsFolder, "meta.txt");
             await File.WriteAllTextAsync(metaPath, pmsName, Encoding.UTF8);
         }
-        return Results.Ok($"PMS spec saved for {pmscode}. Folder: {pmsFolder}");
+        // Return a mock mapping suggestion (in real use, call AI or mapping logic)
+        var mockMapping = new
+        {
+            pmsCode = pmscode,
+            pmsName = pmsName,
+            mappings = new[]
+            {
+                new { pmsField = "roomType", rgbridgeField = "InvCode", confidence = 0.95 },
+                new { pmsField = "ratePlan", rgbridgeField = "RatePlanCode", confidence = 0.92 },
+                new { pmsField = "startDate", rgbridgeField = "Start", confidence = 0.90 },
+                new { pmsField = "endDate", rgbridgeField = "End", confidence = 0.90 }
+            },
+            message = $"Mock mapping suggestion for {pmscode}"
+        };
+        return Results.Json(mockMapping);
     }
     catch (Exception ex)
     {
-        return Results.Problem($"Error processing PMS integration: {ex.Message}");
+        return Results.Problem($"Error processing PMS mapping onboarding: {ex.Message}");
     }
-})
-.WithName("PmsMessageIntake");
+}).WithName("PmsMappingOnboarding");
 
 app.Run();
 
