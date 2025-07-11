@@ -13,16 +13,46 @@ if (app.Environment.IsDevelopment())
 }
 
 // Placeholder PMS API endpoint
-app.MapPost("/pms/{pmscode}", (string pmscode, HttpRequest request) =>
+app.MapPost("/pms/{pmscode}", async (string pmscode, HttpRequest request) =>
 {
-    // TODO: Authenticate request
-    // TODO: Load PMS-specific plugin/translator
-    // TODO: Validate incoming message (schema)
-    // TODO: Map/translate to RGBridge format (use mapping knowledge base)
-    // TODO: Call AI service for mapping suggestions if needed
-    // TODO: Send RGBridge message to internal API
-    // TODO: Log and handle errors
-    return Results.Ok($"Received message for PMS: {pmscode}");
+    try
+    {
+        // Read PMS name from header (optional)
+        string pmsName = request.Headers["X-PMS-Name"].FirstOrDefault() ?? "";
+
+        // Read PMS spec from body
+        string pmsSpec;
+        using (var reader = new StreamReader(request.Body, Encoding.UTF8))
+        {
+            pmsSpec = await reader.ReadToEndAsync();
+        }
+        if (string.IsNullOrWhiteSpace(pmsSpec))
+        {
+            return Results.BadRequest("PMS spec is required in the request body.");
+        }
+        // Validate PMS code (alphanumeric, dash, underscore)
+        if (string.IsNullOrWhiteSpace(pmscode) || !System.Text.RegularExpressions.Regex.IsMatch(pmscode, "^[a-zA-Z0-9_-]+$"))
+        {
+            return Results.BadRequest("Invalid PMS code. Only letters, numbers, dash, and underscore are allowed.");
+        }
+        // Create folder under ../pms/{pmscode}
+        var pmsFolder = Path.Combine("..", "pms", pmscode);
+        Directory.CreateDirectory(pmsFolder);
+        // Save PMS spec
+        var specPath = Path.Combine(pmsFolder, "spec.txt");
+        await File.WriteAllTextAsync(specPath, pmsSpec, Encoding.UTF8);
+        // Save PMS name as metadata (optional)
+        if (!string.IsNullOrWhiteSpace(pmsName))
+        {
+            var metaPath = Path.Combine(pmsFolder, "meta.txt");
+            await File.WriteAllTextAsync(metaPath, pmsName, Encoding.UTF8);
+        }
+        return Results.Ok($"PMS spec saved for {pmscode}. Folder: {pmsFolder}");
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem($"Error processing PMS integration: {ex.Message}");
+    }
 })
 .WithName("PmsMessageIntake");
 
