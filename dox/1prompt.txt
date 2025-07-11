@@ -1,0 +1,308 @@
+Our system works on RGBridge Format that supports following messages:
+
+1. Availability
+
+<OTA_HotelAvailNotifRQ TimeStamp="2024-05-03T05:56:54.2852473-05:00" Target="Production" Version="1" EchoToken="2025011676"
+	xmlns="http://www.opentravel.org/OTA/2003/05">
+  <AvailStatusMessages HotelCode="MART1">
+    <AvailStatusMessage BookingLimitMessageType="SetLimit" BookingLimit="12">
+      <StatusApplicationControl Start="2025-11-08" End="2025-11-08" InvCode="KING" RatePlanCode="HOP"  Mon="true" Tue="true" Weds="true" Thur="true" Fri="true" Sat="true" Sun="true" />
+      <LengthsOfStay>
+        <LengthOfStay MinMaxMessageType="FullPatternLOS">
+          <LOS_Pattern FullPatternLOS="10001111" />
+        </LengthOfStay>
+      </LengthsOfStay>
+    </AvailStatusMessage>
+    <AvailStatusMessage BookingLimitMessageType="SetLimit" BookingLimit="13">
+      <StatusApplicationControl Start="2025-11-08" End="2025-11-08" InvCode="QUEEN" RatePlanCode="HOP" Mon="true" Tue="true" Weds="true" Thur="true" Fri="true" Sat="true" Sun="true" />
+      <LengthsOfStay>
+        <LengthOfStay MinMaxMessageType="FullPatternLOS">
+          <LOS_Pattern FullPatternLOS="10001111" />
+        </LengthOfStay>
+        <LengthOfStay MinMaxMessageType="SetMinLOS" TimeUnit="Day" Time="1" />
+        <LengthOfStay MinMaxMessageType="SetMaxLOS" TimeUnit="Day" Time="99" />
+        <LengthOfStay MinMaxMessageType="SetForwardMinStay" TimeUnit="Day" Time="1" />
+        <LengthOfStay MinMaxMessageType="SetForwardMaxStay" TimeUnit="Day" Time="99" />
+      </LengthsOfStay>
+      <RestrictionStatus Status="Open" />
+    </AvailStatusMessage>
+    <AvailStatusMessage>
+      <StatusApplicationControl Start="2025-11-08" End="2025-11-08" InvCode="QUEEN" RatePlanCode="HOP" Mon="true" Tue="true" Weds="true" Thur="true" Fri="true" Sat="true" Sun="true" />
+      <RestrictionStatus Status="OpenOnArrival" />
+    </AvailStatusMessage>
+    <AvailStatusMessage>
+      <StatusApplicationControl Start="2025-11-08" End="2025-11-08" InvCode="QUEEN" RatePlanCode="HOP" Mon="true" Tue="true" Weds="true" Thur="true" Fri="true" Sat="true" Sun="true" />
+      <RestrictionStatus Status="OpenOnDeparture" />
+    </AvailStatusMessage>
+    <AvailStatusMessage>
+      <StatusApplicationControl Start="2025-11-09" End="2025-11-09" InvCode="QUEEN" RatePlanCode="HOP" Mon="true" Tue="true" Weds="true" Thur="true" Fri="true" Sat="true" Sun="true" />
+      <RestrictionStatus Status="Close" />
+    </AvailStatusMessage>
+    <AvailStatusMessage>
+      <StatusApplicationControl Start="2025-11-09" End="2025-11-09" InvCode="QUEEN" RatePlanCode="HOP" Mon="true" Tue="true" Weds="true" Thur="true" Fri="true" Sat="true" Sun="true" />
+      <RestrictionStatus Status="ClosedOnArrival" />
+    </AvailStatusMessage>
+    <AvailStatusMessage>
+      <StatusApplicationControl Start="2025-11-09" End="2025-11-09" InvCode="QUEEN" RatePlanCode="HOP" Mon="true" Tue="true" Weds="true" Thur="true" Fri="true" Sat="true" Sun="true" />
+      <RestrictionStatus Status="ClosedOnDeparture" />
+    </AvailStatusMessage>
+    <AvailStatusMessage>
+      <StatusApplicationControl Start="2025-11-10" End="2025-11-10" InvCode="QUEEN" RatePlanCode="HOP" Mon="true" Tue="true" Weds="true" Thur="true" Fri="true" Sat="true" Sun="true" />
+      <RestrictionStatus Status="ClosedOnArrivalDeparture" />
+    </AvailStatusMessage>
+    <AvailStatusMessage>
+      <StatusApplicationControl Start="2025-11-11" End="2025-11-11" InvCode="QUEEN" RatePlanCode="HOP" Mon="true" Tue="true" Weds="true" Thur="true" Fri="true" Sat="true" Sun="true" />
+      <RestrictionStatus MinAdvancedBookingOffset="4" />
+    </AvailStatusMessage>
+    <AvailStatusMessage>
+      <StatusApplicationControl Start="2025-11-11" End="2025-11-11" InvCode="QUEEN" RatePlanCode="HOP" Mon="true" Tue="true" Weds="true" Thur="true" Fri="true" Sat="true" Sun="true" />
+      <RestrictionStatus MaxAdvancedBookingOffset="9" />
+    </AvailStatusMessage>
+    <AvailStatusMessage>
+      <StatusApplicationControl Start="2025-11-12" End="2025-11-12" InvCode="QUEEN" RatePlanCode="HOP" Mon="true" Tue="true" Weds="true" Thur="true" Fri="true" Sat="true" Sun="true" />
+      <RestrictionStatus Status="ExtraBedOpen" />
+    </AvailStatusMessage>
+    <AvailStatusMessage>
+      <StatusApplicationControl Start="2025-11-12" End="2025-11-12" InvCode="QUEEN" RatePlanCode="HOP" Mon="true" Tue="true" Weds="true" Thur="true" Fri="true" Sat="true" Sun="true" />
+      <RestrictionStatus Status="ExtraBedClose" />
+    </AvailStatusMessage>
+  </AvailStatusMessages>
+</OTA_HotelAvailNotifRQ>
+
+2. Rate 
+
+<OTA_HotelRateAmountNotifRQ TimeStamp="2021-08-04T04:56:56" Target="Production" Version="1.0" EchoToken="20250422_1"
+	xmlns="http://www.opentravel.org/OTA/2003/05">
+  <RateAmountMessages HotelCode="MART1">
+    <RateAmountMessage>
+      <StatusApplicationControl InvCode="KING" RatePlanCode="HOP" End="2025-11-08" Start="2025-11-08" />
+      <Rates>
+        <Rate CurrencyCode="USD" UnitMultiplier="1">
+          <BaseByGuestAmts>
+            <BaseByGuestAmt AmountBeforeTax="80.00" AmountAfterTax="100.00" AgeQualifyingCode="10" NumberOfGuests="1" />
+            <BaseByGuestAmt AmountBeforeTax="160.00" AmountAfterTax="220.00" AgeQualifyingCode="10" NumberOfGuests="2" />
+            <BaseByGuestAmt AmountBeforeTax="240.00" AmountAfterTax="340.00" AgeQualifyingCode="10" NumberOfGuests="3" />
+          </BaseByGuestAmts>                
+          <GuaranteePolicies>
+            <GuaranteePolicy GuaranteeCode="DepositRequired" />
+          </GuaranteePolicies>
+          <CancelPolicies>
+            <CancelPenalty NonRefundable="true">
+              <Deadline AbsoluteDeadline="2026-05-30T18:00:00"
+                        OffsetDropTime="BeforeArrival"
+                        OffsetTimeUnit="Day"
+                        OffsetUnitMultiplier="2" />
+              <AmountPercent NmbrOfNights="1"
+                             Amount="200.00"
+                             Percent="100"
+                             CurrencyCode="USD"
+                             TaxInclusive="true"
+                             FeesInclusive="false"
+                             BasisType="Nights" />
+              <PenaltyDescription>
+                <Text>Free cancellation until 2 days before arrival. Then 1 night charged.</Text>
+              </PenaltyDescription>
+            </CancelPenalty>
+          </CancelPolicies>
+          <MealsIncluded MealPlanCodes="17" />
+        </Rate>
+        <Rate CurrencyCode="USD" UnitMultiplier="2">
+          <BaseByGuestAmts>
+            <BaseByGuestAmt AmountBeforeTax="100.00" AmountAfterTax="100.00" AgeQualifyingCode="10" NumberOfGuests="1" />
+            <BaseByGuestAmt AmountBeforeTax="120.00" AmountAfterTax="120.00" AgeQualifyingCode="10" NumberOfGuests="2" />
+            <BaseByGuestAmt AmountBeforeTax="140.00" AmountAfterTax="140.00" AgeQualifyingCode="10" NumberOfGuests="3" />
+          </BaseByGuestAmts>
+        </Rate>
+        <Rate CurrencyCode="USD" UnitMultiplier="3">
+          <BaseByGuestAmts>
+            <BaseByGuestAmt AmountBeforeTax="100.00" AmountAfterTax="100.00" AgeQualifyingCode="10" NumberOfGuests="1" />
+            <BaseByGuestAmt AmountBeforeTax="120.00" AmountAfterTax="120.00" AgeQualifyingCode="10" NumberOfGuests="2" />
+            <BaseByGuestAmt AmountBeforeTax="140.00" AmountAfterTax="140.00" AgeQualifyingCode="10" NumberOfGuests="3" />
+          </BaseByGuestAmts>
+        </Rate>
+      </Rates>
+    </RateAmountMessage>
+    <RateAmountMessage>
+      <StatusApplicationControl InvCode="QUEEN" RatePlanCode="HOP" End="2025-11-08" Start="2025-11-08" />
+      <Rates>
+        <Rate CurrencyCode="USD" UnitMultiplier="1">
+          <BaseByGuestAmts>
+            <BaseByGuestAmt AmountBeforeTax="80.00" AmountAfterTax="120.00" AgeQualifyingCode="10" NumberOfGuests="1" />
+            <BaseByGuestAmt AmountBeforeTax="140.00" AmountAfterTax="220.00" AgeQualifyingCode="10" NumberOfGuests="2" />
+          </BaseByGuestAmts>
+          <CancelPolicies>
+            <CancelPenalty NonRefundable="false">
+              <Deadline OffsetTimeUnit="Day"
+                        OffsetUnitMultiplier="1"
+                        OffsetDropTime="BeforeArrival"/>
+              <AmountPercent Percent="80"
+                             TaxInclusive="true"
+                             FeesInclusive="true"
+                             BasisType="FullStay"/>
+            </CancelPenalty>
+          </CancelPolicies>
+        </Rate>
+      </Rates>
+    </RateAmountMessage>
+  </RateAmountMessages>
+</OTA_HotelRateAmountNotifRQ>
+
+3. Combined
+
+<OTA_HotelARINotifRQ xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" EchoToken="152507533029517R" Target="Production" TimeStamp="2025-06-30T07:42:26.2682393Z" Version="3.2" xmlns="http://www.opentravel.org/OTA/2003/05">
+  <RateAmountMessages HotelCode="MART1">
+    <RateAmountMessage>
+      <StatusApplicationControl InvCode="KING" RatePlanCode="HOP" End="2026-11-08" Start="2026-11-08" />
+      <Rates>
+        <Rate CurrencyCode="USD" UnitMultiplier="1">
+          <BaseByGuestAmts>
+            <BaseByGuestAmt AmountBeforeTax="80.00" AmountAfterTax="100.00" AgeQualifyingCode="10" NumberOfGuests="1" />
+            <BaseByGuestAmt AmountBeforeTax="160.00" AmountAfterTax="220.00" AgeQualifyingCode="10" NumberOfGuests="2" />
+            <BaseByGuestAmt AmountBeforeTax="240.00" AmountAfterTax="340.00" AgeQualifyingCode="10" NumberOfGuests="3" />
+          </BaseByGuestAmts>                
+          <GuaranteePolicies>
+            <GuaranteePolicy GuaranteeCode="DepositRequired" />
+          </GuaranteePolicies>
+          <CancelPolicies>
+            <CancelPenalty NonRefundable="true">
+              <Deadline AbsoluteDeadline="2026-05-30T18:00:00"
+                        OffsetDropTime="BeforeArrival"
+                        OffsetTimeUnit="Day"
+                        OffsetUnitMultiplier="2" />
+              <AmountPercent NmbrOfNights="1"
+                             Amount="200.00"
+                             Percent="100"
+                             CurrencyCode="USD"
+                             TaxInclusive="true"
+                             FeesInclusive="false"
+                             BasisType="Nights" />
+              <PenaltyDescription>
+                <Text>Free cancellation until 2 days before arrival. Then 1 night charged.</Text>
+              </PenaltyDescription>
+            </CancelPenalty>
+          </CancelPolicies>
+          <MealsIncluded MealPlanCodes="17" />
+        </Rate>
+        <Rate CurrencyCode="USD" UnitMultiplier="2">
+          <BaseByGuestAmts>
+            <BaseByGuestAmt AmountBeforeTax="100.00" AmountAfterTax="100.00" AgeQualifyingCode="10" NumberOfGuests="1" />
+            <BaseByGuestAmt AmountBeforeTax="120.00" AmountAfterTax="120.00" AgeQualifyingCode="10" NumberOfGuests="2" />
+            <BaseByGuestAmt AmountBeforeTax="140.00" AmountAfterTax="140.00" AgeQualifyingCode="10" NumberOfGuests="3" />
+          </BaseByGuestAmts>
+        </Rate>
+        <Rate CurrencyCode="USD" UnitMultiplier="3">
+          <BaseByGuestAmts>
+            <BaseByGuestAmt AmountBeforeTax="100.00" AmountAfterTax="100.00" AgeQualifyingCode="10" NumberOfGuests="1" />
+            <BaseByGuestAmt AmountBeforeTax="120.00" AmountAfterTax="120.00" AgeQualifyingCode="10" NumberOfGuests="2" />
+            <BaseByGuestAmt AmountBeforeTax="140.00" AmountAfterTax="140.00" AgeQualifyingCode="10" NumberOfGuests="3" />
+          </BaseByGuestAmts>
+        </Rate>
+      </Rates>
+    </RateAmountMessage>
+    <RateAmountMessage>
+      <StatusApplicationControl InvCode="QUEEN" RatePlanCode="HOP" End="2026-11-08" Start="2026-11-08" />
+      <Rates>
+        <Rate CurrencyCode="USD" UnitMultiplier="1">
+          <BaseByGuestAmts>
+            <BaseByGuestAmt AmountBeforeTax="80.00" AmountAfterTax="120.00" AgeQualifyingCode="10" NumberOfGuests="1" />
+            <BaseByGuestAmt AmountBeforeTax="140.00" AmountAfterTax="220.00" AgeQualifyingCode="10" NumberOfGuests="2" />
+          </BaseByGuestAmts>
+          <CancelPolicies>
+            <CancelPenalty NonRefundable="false">
+              <Deadline OffsetTimeUnit="Day"
+                        OffsetUnitMultiplier="1"
+                        OffsetDropTime="BeforeArrival"/>
+              <AmountPercent Percent="80"
+                             TaxInclusive="true"
+                             FeesInclusive="true"
+                             BasisType="FullStay"/>
+            </CancelPenalty>
+          </CancelPolicies>
+        </Rate>
+      </Rates>
+    </RateAmountMessage>
+  </RateAmountMessages>
+  <AvailStatusMessages HotelCode="MART1">
+	<AvailStatusMessage BookingLimitMessageType="SetLimit" BookingLimit="12">
+			<StatusApplicationControl Start="2026-11-08" End="2026-11-08" InvCode="KING" RatePlanCode="HOP"  Mon="true" Tue="true" Weds="true" Thur="true" Fri="true" Sat="true" Sun="true" />
+      <LengthsOfStay>
+        <LengthOfStay MinMaxMessageType="FullPatternLOS">
+          <LOS_Pattern FullPatternLOS="10001111" />
+        </LengthOfStay>
+      </LengthsOfStay>
+		</AvailStatusMessage>
+	<AvailStatusMessage BookingLimitMessageType="SetLimit" BookingLimit="13">
+			<StatusApplicationControl Start="2026-11-08" End="2026-11-08" InvCode="QUEEN" RatePlanCode="HOP" Mon="true" Tue="true" Weds="true" Thur="true" Fri="true" Sat="true" Sun="true" />
+      <LengthsOfStay>
+				<LengthOfStay MinMaxMessageType="FullPatternLOS">
+          <LOS_Pattern FullPatternLOS="10001111" />
+        </LengthOfStay>
+			</LengthsOfStay>
+     <RestrictionStatus Status="Open" />
+		</AvailStatusMessage>
+  </AvailStatusMessages>
+</OTA_HotelARINotifRQ>
+
+
+We integrate new PMS with our system. I want to automate this, use GenAI (like openai api).   
+1. For each PMS we have individual api gateway like https://baseendpoint/pmscode.
+2. api gateway authentication may be basic, bearer, api key.
+3. Request message in PMS format are received on api gateway.
+4. Their custom messages are translated to our RGBridge format defined above.
+5. If PMS supports separate Availability and Rate message, 
+then received Availability message is translated to RGBridge Availability message,
+and received Rate massage is translated to RGBridge Rate format message.
+6. If PMS supports Combined message, then that single message is translated to RGBridge Combined message format.
+7. Our standard RGBridge formatted message is pushed to our API.
+
+Your task is to
+1. Understand RGBridge format.
+2. Make knowledge base that will maintain all attributes / tags of RGBridge format messages.
+3. When new PMS is to be integrated, a new folder with that pmscode should be created under fixed folder 'pms'. 
+4. in this newly creade folder, translator file and mappings file for that pms will be generated.
+5. new pms specs documentation provided will be analysed and used as reference throughout the integration process. 
+6. you will use genai to detect transformation.
+7. make professional colorful horizontal good-looking ui
+7. Create a UI wizard to integrate new PMS.
+
+Following points need to be considered.
+
+Incoming message format from each PMS may be one of JSON or XML or graphQL or soap.
+Each PMS has its own format. structure of PMS messages always known in advance.
+Incoming message schema validation is needed.
+Mapping knowledge base will be stored as a static file (e.g. YAML) PMS wise.
+To register a new PMS translator auto-discover via decorators/class-based plugin system.
+Mappings are static. obvious ones are auto detected. You may use openAI call to detect unclear mappings. Not clear mappings are asked.
+Invocation Flow : each API Gateway (e.g., /pmscode) interpreter running within a monolithic app.
+Translation Function Should validate incoming PMS payloads too.
+we may have common utilities to parse standard date formats, currency, flags (e.g., LOS pattern to boolean).
+Generated RGBridge message to be pushed to our internal API endpoint as an HTTP POST with XML payload using basic authentication.
+Error handling/acknowledgement is expected. Retry logic is expected.
+Programming Language & Framework: c#.net for API, any good gui may be considered.
+code includes the API gateway endpoint (e.g., a REST API that receives PMS messages).
+code handles authentication, logging, or error handling for incoming requests.
+The protocol for pushing the translated RGBridge message to our API is HTTP POST.
+Extensibility for New PMS : PMS-specific translator methods should be plug-and-play (e.g., via a plugin system or class inheritance). a new folder for each PMS.
+Automated tests (unit/integration) for the translators and mapping logic.
+System should validate the generated RGBridge messages against an XSD/schema.
+follow gdpr and pci guidelines.
+This is a standalone service.
+CI/CD and cloud deployment.
+
+We want to do analysis, development, testing, deployment with best professional user interface and documentation. 
+you have to incorporate apenai calls whereever needed.
+
+Modularity:	Generated code must be structured in independent modules by feature/domain (e.g., ARI, Reservation, Policies).
+Idempotency:	Regenerating code for a PMS spec should not overwrite or affect previously tested/used modules.
+Version Control:	Every integration and code artifact must be traceable to the PMS version and feature set used.
+Extensibility: New PMS features should trigger partial regeneration only for new logic.
+
+- Initial: Analyze and generate complete integration skeleton.
+- Subsequent: Append new logic only.
+- QA & Cert: Execute AI-generated tests for new paths.
+- Deploy: Promote modular code to UAT/Prod environments.
+
+- Each PMS integration is treated as a distinct, additive module.
+- The system never re-touches tested code for earlier PMS integrations.
+- The platform evolves non-destructively and uses AI for smart code augmentation.
+

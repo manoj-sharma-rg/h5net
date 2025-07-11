@@ -1,0 +1,45 @@
+flowchart TD
+  subgraph UI["UI Wizard (React + Material UI)"]
+    A1["Step 1: Upload PMS Spec"]
+    A2["Step 2: AI Mapping Suggestions"]
+    A3["Step 3: Manual Mapping"]
+    A4["Step 4: Generate/Preview Files"]
+    A5["Step 5: Test Translation"]
+    A6["Step 6: Deploy Integration"]
+    A1 --> A2 --> A3 --> A4 --> A5 --> A6
+  end
+
+  subgraph API["API Gateway (C#/.NET)"]
+    B1["/pms/{pmscode} Endpoint"]
+    B2["Authentication Middleware"]
+    B3["Schema Validation"]
+    B4["Translator Plugin System"]
+    B5["Mapping Loader (YAML/JSON)"]
+    B6["AI Integration Service (OpenAI)"]
+    B7["Outbound RGBridge Sender"]
+    B8["Logging & Audit Trail"]
+    B1 --> B2 --> B3 --> B4 --> B5
+    B4 --> B6
+    B5 --> B4
+    B4 --> B7
+    B7 --> B8
+  end
+
+  subgraph PMS["PMS Integrations (per folder)"]
+    C1["PMS Spec & Mapping Files"]
+    C2["Translator Code"]
+    C1 --> C2
+  end
+
+  subgraph RGBridge["Internal API (RGBridge)"]
+    D1["Receives Standardized XML"]
+  end
+
+  UI -->|"User Actions"| API
+  API -->|"Auto-Discovery, Mapping"| PMS
+  API -->|"HTTP POST (XML)"| RGBridge
+  PMS -->|"Static Files"| API
+  API -->|"AI Calls"| B6
+  B6 -.->|"Suggestions, Codegen"| API
+  API -->|"Logs, Errors"| B8
+  B8 -->|"Audit Trail"| API 
