@@ -9,7 +9,11 @@ Scaffold the frontend in ui/
      npm create vite@latest ui -- --template react-ts
      npm install
      npm run dev
-     
+Scaffold the multi-step wizard in React app, with placeholder steps for each part of the onboarding flow 
+scaffold steps of the wizard
+Backend logic to use the PMS code for routing and folder creation
+
+
 Initializing Python:    python -m venv env312 & env312\Scripts\activate & pip install fastapi uvicorn pydantic httpx pluggy PyYAML xmlschema python-dateutil
 Adding minimal FastAPI and React app scaffolds
 Filling in the base classes and sample plugin
