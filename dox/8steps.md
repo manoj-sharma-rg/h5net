@@ -20,8 +20,8 @@ ui wizard start
 ======================================================
 
 make sure backend api run on .net8. 
-frontend ui vite with react 18- modularize, add pages like dashboard and integrated pms
-
+frontend ui vite with react 18- modularize, add pages like dashboard and integrated pms tabs
+api add pdf support
 
 Setting up the CI/CD pipeline
 api gateway : new or old
@@ -32,5 +32,5 @@ add a tab in wizard before last page
 
 
 ======================================================
-dotnet new webapi -o api --no-https
+dotnet run --project api
 npm run dev
