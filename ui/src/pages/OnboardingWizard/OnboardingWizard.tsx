@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Stepper,
@@ -41,11 +41,14 @@ interface MappingSuggestion {
 const OnboardingWizard: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [pmsCode, setPmsCode] = useState('');
+  const [pmsName, setPmsName] = useState('');
   const [pmsSpec, setPmsSpec] = useState('');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [mappingSuggestions, setMappingSuggestions] = useState<MappingSuggestion[]>([]);
   const [generatedFiles, setGeneratedFiles] = useState<string[]>([]);
   const [testResult, setTestResult] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isPdfExtracting, setIsPdfExtracting] = useState(false);
   const [expandedSections, setExpandedSections] = useState<{ [key: string]: boolean }>({
     specInput: true,
     mappingReview: true,
@@ -107,6 +110,69 @@ const OnboardingWizard: React.FC = () => {
     );
   };
 
+  const extractPdfText = async (file: File): Promise<string> => {
+    try {
+      // Dynamically import pdfjs-dist
+      const pdfjsLib = await import('pdfjs-dist');
+      
+      // Set worker source
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      
+      // Read file as ArrayBuffer
+      const arrayBuffer = await file.arrayBuffer();
+      
+      // Load PDF document
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      
+      let extractedText = '';
+      
+      // Extract text from each page
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        
+        // Combine text items
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        
+        extractedText += `Page ${pageNum}:\n${pageText}\n\n`;
+      }
+      
+      return extractedText;
+    } catch (error) {
+      console.error('Error extracting PDF text:', error);
+      throw new Error('Failed to extract text from PDF');
+    }
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setUploadedFile(file);
+      
+      if (file.type === 'application/pdf') {
+        setIsPdfExtracting(true);
+        try {
+          const extractedText = await extractPdfText(file);
+          setPmsSpec(extractedText);
+        } catch (error) {
+          setPmsSpec(`Error extracting PDF text: ${error}\n\nFile: ${file.name}`);
+        } finally {
+          setIsPdfExtracting(false);
+        }
+      } else {
+        // For text files (JSON, TXT), read the content
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const content = e.target?.result as string;
+          setPmsSpec(content);
+        };
+        reader.readAsText(file);
+      }
+    }
+  };
+
   const handleTestTranslation = async () => {
     setIsLoading(true);
     try {
@@ -136,41 +202,77 @@ const OnboardingWizard: React.FC = () => {
       case 0:
         return (
           <Paper sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6" sx={{ flexGrow: 1 }}>
-                PMS Specification Upload
-              </Typography>
-              <IconButton onClick={() => toggleSection('specInput')}>
-                {expandedSections.specInput ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              </IconButton>
-            </Box>
+            <Typography variant="h5" gutterBottom>
+              PMS Specification Upload
+            </Typography>
             
-            <Collapse in={expandedSections.specInput}>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>PMS Code</InputLabel>
-                <Select
-                  value={pmsCode}
-                  label="PMS Code"
-                  onChange={(e) => setPmsCode(e.target.value)}
-                >
-                  <MenuItem value="hotelabc">HotelABC</MenuItem>
-                  <MenuItem value="resortxyz">ResortXYZ</MenuItem>
-                  <MenuItem value="motel123">Motel123</MenuItem>
-                  <MenuItem value="inn456">Inn456</MenuItem>
-                </Select>
-              </FormControl>
+            <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+              <TextField
+                sx={{ flex: 1 }}
+                label="PMS Code"
+                value={pmsCode}
+                onChange={(e) => setPmsCode(e.target.value)}
+                placeholder="Enter PMS code (e.g., hotelabc, resortxyz)"
+                variant="outlined"
+                helperText="Use lowercase letters, numbers, dash, and underscore only"
+              />
               
               <TextField
+                sx={{ flex: 1 }}
+                label="PMS Name"
+                value={pmsName}
+                onChange={(e) => setPmsName(e.target.value)}
+                placeholder="Enter PMS name (e.g., My Hotel PMS)"
+                variant="outlined"
+              />
+            </Box>
+            
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Upload PMS Specification File
+              </Typography>
+                                                  <Button
+                    variant="outlined"
+                    component="label"
+                    startIcon={<UploadIcon />}
+                    disabled={isPdfExtracting}
+                    sx={{ mr: 2 }}
+                  >
+                    {isPdfExtracting ? 'Extracting PDF...' : 'Upload File'}
+                    <input
+                      type="file"
+                      hidden
+                      accept=".json,.txt,.pdf"
+                      onChange={handleFileUpload}
+                    />
+                  </Button>
+                  {isPdfExtracting && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CircularProgress size={16} />
+                      <Typography variant="body2" color="primary">
+                        Extracting text from PDF...
+                      </Typography>
+                    </Box>
+                  )}
+                  {uploadedFile && !isPdfExtracting && (
+                    <Typography variant="body2" color="success.main">
+                      ✓ {uploadedFile.name} uploaded
+                      {uploadedFile.type === 'application/pdf' && ' (text extracted)'}
+                    </Typography>
+                  )}
+            </Box>
+            
+                          <TextField
                 fullWidth
                 multiline
                 rows={8}
-                label="PMS Specification (JSON)"
+                label="PMS Specification"
                 value={pmsSpec}
                 onChange={(e) => setPmsSpec(e.target.value)}
-                placeholder="Paste your PMS specification JSON here..."
+                placeholder="Paste your PMS specification here or upload a file above..."
                 variant="outlined"
+                helperText="You can either paste specification directly or upload a JSON, TXT, or PDF file"
               />
-            </Collapse>
           </Paper>
         );
 
