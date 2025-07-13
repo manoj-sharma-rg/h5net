@@ -45,6 +45,7 @@ const OnboardingWizard: React.FC = () => {
   const [pmsSpec, setPmsSpec] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [mappingSuggestions, setMappingSuggestions] = useState<MappingSuggestion[]>([]);
+  const [unmappedFields, setUnmappedFields] = useState<string[]>([]);
   const [generatedFiles, setGeneratedFiles] = useState<string[]>([]);
   const [testResult, setTestResult] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
@@ -85,8 +86,20 @@ const OnboardingWizard: React.FC = () => {
         
         if (response.ok) {
           const data = await response.json();
-          setMappingSuggestions(data.mappingSuggestions || []);
-          setGeneratedFiles(data.generatedFiles || []);
+          // Convert backend response format to frontend format
+          const suggestions = (data.mappings || []).map((mapping: any) => ({
+            sourceField: mapping.pmsField,
+            targetField: mapping.rgbridgeField,
+            confidence: mapping.confidence * 100, // Convert to percentage
+            approved: false
+          }));
+          setMappingSuggestions(suggestions);
+          // Add mock generated files for demonstration
+          setGeneratedFiles([
+            `${pmsCode}_translator.cs`,
+            `${pmsCode}_mapping.json`,
+            `${pmsCode}_config.xml`
+          ]);
         }
       } catch (error) {
         console.error('Error generating mappings:', error);
@@ -112,37 +125,27 @@ const OnboardingWizard: React.FC = () => {
 
   const extractPdfText = async (file: File): Promise<string> => {
     try {
-      // Dynamically import pdfjs-dist
-      const pdfjsLib = await import('pdfjs-dist');
+      // For now, send PDF to backend for extraction
+      // This is more reliable than client-side extraction
+      const formData = new FormData();
+      formData.append('pdf', file);
       
-      // Set worker source
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      const response = await fetch('http://localhost:8000/extract-pdf', {
+        method: 'POST',
+        body: formData,
+      });
       
-      // Read file as ArrayBuffer
-      const arrayBuffer = await file.arrayBuffer();
-      
-      // Load PDF document
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      
-      let extractedText = '';
-      
-      // Extract text from each page
-      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-        const page = await pdf.getPage(pageNum);
-        const textContent = await page.getTextContent();
-        
-        // Combine text items
-        const pageText = textContent.items
-          .map((item: any) => item.str)
-          .join(' ');
-        
-        extractedText += `Page ${pageNum}:\n${pageText}\n\n`;
+      if (response.ok) {
+        const result = await response.json();
+        return result.extractedText || 'No text extracted from PDF';
+      } else {
+        throw new Error('Backend PDF extraction failed');
       }
-      
-      return extractedText;
     } catch (error) {
       console.error('Error extracting PDF text:', error);
-      throw new Error('Failed to extract text from PDF');
+      
+      // Fallback: return file info and instructions
+      return `PDF file uploaded: ${file.name}\n\nNote: PDF text extraction requires backend support.\nPlease paste the PMS specification content directly in the text area below, or upload a JSON/TXT file instead.\n\nFile size: ${(file.size / 1024).toFixed(2)} KB`;
     }
   };
 

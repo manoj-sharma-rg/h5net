@@ -1,5 +1,8 @@
 using System.Reflection;
 using System.Text;
+using iText.Kernel.Pdf;
+using iText.Kernel.Pdf.Canvas.Parser;
+using iText.Kernel.Pdf.Canvas.Parser.Listener;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -99,6 +102,64 @@ app.MapPost("/pms/{pmscode}", async (string pmscode, HttpRequest request, ILogge
 })
 .WithName("PmsMessageIntake");
 
+// PDF text extraction endpoint
+app.MapPost("/extract-pdf", async (HttpRequest request, ILogger<Program> logger) =>
+{
+    logger.LogInformation("[{Timestamp}] Received PDF extraction request", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"));
+    
+    try
+    {
+        // Check if file is present
+        if (!request.HasFormContentType)
+        {
+            logger.LogWarning("[{Timestamp}] No form content received", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"));
+            return Results.BadRequest("PDF file is required");
+        }
+        
+        var form = await request.ReadFormAsync();
+        var file = form.Files.FirstOrDefault();
+        
+        if (file == null)
+        {
+            logger.LogWarning("[{Timestamp}] No file found in request", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"));
+            return Results.BadRequest("PDF file is required");
+        }
+        
+        if (!file.ContentType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            logger.LogWarning("[{Timestamp}] Invalid file type: {ContentType}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), file.ContentType);
+            return Results.BadRequest("Only PDF files are supported");
+        }
+        
+        logger.LogInformation("[{Timestamp}] Processing PDF file: {FileName}, Size: {FileSize} bytes", 
+            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), file.FileName, file.Length);
+        
+        // Extract text from PDF
+        string extractedText = "";
+        using (var stream = file.OpenReadStream())
+        using (var pdfReader = new PdfReader(stream))
+        using (var pdfDocument = new PdfDocument(pdfReader))
+        {
+            for (int page = 1; page <= pdfDocument.GetNumberOfPages(); page++)
+            {
+                var strategy = new SimpleTextExtractionStrategy();
+                var text = PdfTextExtractor.GetTextFromPage(pdfDocument.GetPage(page), strategy);
+                extractedText += $"--- Page {page} ---\n{text}\n\n";
+            }
+        }
+        
+        logger.LogInformation("[{Timestamp}] Successfully extracted text from PDF: {FileName}, Text length: {TextLength} characters", 
+            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), file.FileName, extractedText.Length);
+        
+        return Results.Json(new { extractedText });
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "[{Timestamp}] Error extracting PDF text: {ErrorMessage}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), ex.Message);
+        return Results.Problem($"Error extracting PDF text: {ex.Message}");
+    }
+}).WithName("ExtractPdf");
+
 app.MapPost("/mappings/{pmscode}", async (string pmscode, HttpRequest request, ILogger<Program> logger) =>
 {
     logger.LogInformation("[{Timestamp}] Received PMS mapping onboarding request for PMS code: {PmsCode}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode);
@@ -132,13 +193,13 @@ app.MapPost("/mappings/{pmscode}", async (string pmscode, HttpRequest request, I
         }
         
         // Create folder under ../pms/{pmscode}
-        var pmsFolder = Path.Combine("..", "pms", pmscode);
+        var pmsFolder = System.IO.Path.Combine("..", "pms", pmscode);
         logger.LogInformation("[{Timestamp}] Creating PMS folder: {PmsFolder}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmsFolder);
         Directory.CreateDirectory(pmsFolder);
         logger.LogInformation("[{Timestamp}] Successfully created PMS folder: {PmsFolder}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmsFolder);
         
         // Save PMS spec
-        var specPath = Path.Combine(pmsFolder, "spec.txt");
+        var specPath = System.IO.Path.Combine(pmsFolder, "spec.txt");
         logger.LogInformation("[{Timestamp}] Saving PMS spec to: {SpecPath}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), specPath);
         await File.WriteAllTextAsync(specPath, pmsSpec, Encoding.UTF8);
         logger.LogInformation("[{Timestamp}] Successfully saved PMS spec to: {SpecPath}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), specPath);
@@ -146,7 +207,7 @@ app.MapPost("/mappings/{pmscode}", async (string pmscode, HttpRequest request, I
         // Save PMS name as metadata (optional)
         if (!string.IsNullOrWhiteSpace(pmsName))
         {
-            var metaPath = Path.Combine(pmsFolder, "meta.txt");
+            var metaPath = System.IO.Path.Combine(pmsFolder, "meta.txt");
             logger.LogInformation("[{Timestamp}] Saving PMS metadata to: {MetaPath}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), metaPath);
             await File.WriteAllTextAsync(metaPath, pmsName, Encoding.UTF8);
             logger.LogInformation("[{Timestamp}] Successfully saved PMS metadata to: {MetaPath}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), metaPath);
