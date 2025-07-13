@@ -21,6 +21,7 @@ This platform enables rapid, secure, and scalable integration of third-party Pro
 - `pms/` — PMS-specific translators and mapping files (one folder per PMS)
 - `common/` — Shared utilities, schema validators, and AI helpers
 - `tests/` — Unit and integration tests for backend and frontend
+- `deploy/` — Production deployment scripts, Docker files, and deployment guides
 - `dox/` — Documentation, requirements, and planning files
 
 ## Quick Start
@@ -30,20 +31,32 @@ This platform enables rapid, secure, and scalable integration of third-party Pro
 - Node.js 18+ and npm
 - PowerShell or Command Prompt
 
-### Backend Setup
+### Development Setup
 ```bash
+# Backend
 cd api
 dotnet run
-```
-The API will start on `http://localhost:8000`
+# The API will start on http://localhost:8000
 
-### Frontend Setup
-```bash
+# Frontend
 cd ui
 npm install
 npm run dev
+# The UI will start on http://localhost:5173
 ```
-The UI will start on `http://localhost:5173`
+
+### Production Deployment
+```powershell
+# PowerShell deployment
+.\deploy\deploy-production.ps1
+
+# Docker deployment
+docker-compose -f deploy/docker-compose.yml up -d
+```
+
+For detailed deployment instructions, see [`deploy/PRODUCTION.md`](deploy/PRODUCTION.md).
+
+For testing instructions, see [`tests/TESTING.md`](tests/TESTING.md).
 
 ## API Endpoints
 

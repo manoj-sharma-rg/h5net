@@ -88,6 +88,15 @@ chmod +x tests/test-pms-feed-curl.sh
 2. Complete steps 1-4 to deploy a PMS integration
 3. Use the "Test Deployment" button in step 5
 
+### Test Production Deployment
+```powershell
+# Run production deployment script
+.\deploy\deploy-production.ps1 -SkipTests
+
+# Or run with tests
+.\deploy\deploy-production.ps1
+```
+
 ### Test Translation via API
 ```bash
 # Test JSON translation

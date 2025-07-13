@@ -160,12 +160,20 @@ chmod +x tests/test-pms-feed-curl.sh
 ```
 tests/
 ├── README.md                    # This file
+├── TESTING.md                   # Comprehensive testing guide
 ├── run-tests.ps1               # Interactive test runner
 ├── test-pms-feed-simple.js     # Node.js PMS feed test
 ├── test-pms-feed.ps1           # PowerShell PMS feed test
 ├── test-pms-feed-curl.sh       # Bash/Curl PMS feed test
 └── test-deployment.js          # Simple deployment test
 ```
+
+## 📚 **Documentation**
+
+- **Testing Guide**: `TESTING.md` - Comprehensive testing instructions and troubleshooting
+- **Production Guide**: `../deploy/PRODUCTION.md` - Production deployment instructions
+- **API Documentation**: `http://localhost:8000/swagger` - API reference
+- **Health Dashboard**: `http://localhost:8000/health` - System health monitoring
 
 ## Contributing
 
