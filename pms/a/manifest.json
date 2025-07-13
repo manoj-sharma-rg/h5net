@@ -1,9 +1,9 @@
 ﻿{
-  "deploymentId": "b2c2cd92-3deb-4462-ac38-5983bd8bd957",
+  "deploymentId": "cae96237-3d37-4861-ace4-982a391b71f5",
   "pmsCode": "a",
   "pmsName": "a",
   "status": "active",
-  "deployedAt": "2025-07-13 15:23:57.378",
+  "deployedAt": "2025-07-13 15:46:51.635",
   "mappingsCount": 12,
   "endpoint": "/api/pms/a",
   "version": "1.0.0"

@@ -32,5 +32,5 @@ add a tab in wizard before last page
 
 
 ======================================================
-dotnet new webapi -o api --no-https
+dotnet run --project api
 npm run dev

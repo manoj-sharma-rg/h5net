@@ -33,23 +33,23 @@ public class DeploymentController : ControllerBase
                 return BadRequest("At least one mapping is required for deployment");
             }
 
-            // Create deployment directory
-            var deploymentDir = System.IO.Path.Combine("..", "deployments", request.PmsCode);
-            Directory.CreateDirectory(deploymentDir);
+            // Create PMS directory
+            var pmsDir = System.IO.Path.Combine("..", "pms", request.PmsCode);
+            Directory.CreateDirectory(pmsDir);
 
             // 1. Generate translator code
             var translatorCode = GenerateTranslatorCode(request);
-            var translatorPath = System.IO.Path.Combine(deploymentDir, $"{request.PmsCode}Translator.cs");
+            var translatorPath = System.IO.Path.Combine(pmsDir, $"{request.PmsCode}Translator.cs");
             await System.IO.File.WriteAllTextAsync(translatorPath, translatorCode, Encoding.UTF8);
 
             // 2. Generate mapping configuration
             var mappingConfig = GenerateMappingConfig(request);
-            var mappingPath = System.IO.Path.Combine(deploymentDir, "mapping.json");
+            var mappingPath = System.IO.Path.Combine(pmsDir, "mapping.json");
             await System.IO.File.WriteAllTextAsync(mappingPath, mappingConfig, Encoding.UTF8);
 
             // 3. Generate deployment manifest
             var manifest = GenerateDeploymentManifest(request);
-            var manifestPath = System.IO.Path.Combine(deploymentDir, "manifest.json");
+            var manifestPath = System.IO.Path.Combine(pmsDir, "manifest.json");
             await System.IO.File.WriteAllTextAsync(manifestPath, manifest, Encoding.UTF8);
 
             // 4. Activate the integration (in real implementation, this would register with the plugin system)

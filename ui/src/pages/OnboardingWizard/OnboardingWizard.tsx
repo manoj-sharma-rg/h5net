@@ -61,6 +61,7 @@ const OnboardingWizard: React.FC = () => {
   const [isDeploying, setIsDeploying] = useState(false);
   const [isDeployed, setIsDeployed] = useState(false);
   const [deployResult, setDeployResult] = useState<string>('');
+  const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
 
   const steps = [
     'PMS Specification Upload',
@@ -289,8 +290,17 @@ const OnboardingWizard: React.FC = () => {
   };
 
   const handleTestTranslation = async () => {
+    if (!pmsCode) {
+      setTestResult('Error: PMS code is required for testing');
+      return;
+    }
+    
     setIsLoading(true);
+    setTestResult('');
+    
     try {
+      console.log(`Testing translation for PMS: ${pmsCode}`);
+      
       const response = await fetch(`http://localhost:8000/api/pms/${pmsCode}/test`, {
         method: 'POST',
         headers: {
@@ -301,39 +311,85 @@ const OnboardingWizard: React.FC = () => {
         }),
       });
       
+      console.log('Test response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        setTestResult(data.message || 'Translation completed successfully');
+        console.log('Test response data:', data);
+        
+        setTestResult(`✅ Test Translation Successful!
+
+Response Details:
+• Status: ${response.status} OK
+• Message: ${data.message || 'Translation completed successfully'}
+• Timestamp: ${data.timestamp || 'N/A'}
+• Success: ${data.success !== false ? 'Yes' : 'No'}
+
+The translation endpoint is working correctly!`);
       } else {
-        setTestResult('Error during translation: ' + response.statusText);
+        const errorText = await response.text();
+        console.error('Test failed:', response.status, errorText);
+        
+        setTestResult(`❌ Test Translation Failed!
+
+Error Details:
+• Status: ${response.status} ${response.statusText}
+• Error: ${errorText || 'Unknown error'}
+
+Please check:
+• Backend server is running on port 8000
+• PMS code "${pmsCode}" is valid
+• Network connectivity`);
       }
     } catch (error) {
-      setTestResult('Error during translation: ' + error);
+      console.error('Test translation error:', error);
+      
+      setTestResult(`❌ Test Translation Error!
+
+Error Details:
+• Type: ${error instanceof Error ? error.name : 'Unknown'}
+• Message: ${error instanceof Error ? error.message : String(error)}
+
+Please check:
+• Backend server is running on http://localhost:8000
+• Network connectivity
+• CORS settings`);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDeployIntegration = async () => {
+    if (!pmsCode) {
+      setDeployResult('❌ Error: PMS code is required for deployment');
+      return;
+    }
+    
+    const approvedMappings = mappingSuggestions.filter(m => m.approved);
+    if (approvedMappings.length === 0) {
+      setDeployResult('❌ Error: At least one mapping must be approved before deployment');
+      return;
+    }
+    
     setIsDeploying(true);
+    setDeployResult('');
+    
     try {
-      // In a real implementation, this would:
-      // 1. Save all approved mappings to the backend
-      // 2. Generate the actual translator code
-      // 3. Deploy the translator to the production environment
-      // 4. Activate the integration
+      console.log('Starting deployment for PMS:', pmsCode);
+      console.log('Approved mappings:', approvedMappings);
       
-      // Mock deployment process
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate deployment time
-      
-      const approvedMappings = mappingSuggestions.filter(m => m.approved);
-      const deploymentData = {
+      const deploymentPayload = {
         pmsCode,
         pmsName,
-        mappings: approvedMappings,
-        generatedFiles,
-        timestamp: new Date().toISOString()
+        mappings: approvedMappings.map(m => ({
+          sourceField: m.sourceField,
+          targetField: m.targetField,
+          confidence: m.confidence / 100 // Convert back to decimal
+        })),
+        generatedFiles
       };
+      
+      console.log('Deployment payload:', deploymentPayload);
       
       // Send deployment request to backend
       const response = await fetch('http://localhost:8000/api/deployment/deploy', {
@@ -341,20 +397,15 @@ const OnboardingWizard: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          pmsCode,
-          pmsName,
-          mappings: approvedMappings.map(m => ({
-            sourceField: m.sourceField,
-            targetField: m.targetField,
-            confidence: m.confidence / 100 // Convert back to decimal
-          })),
-          generatedFiles
-        }),
+        body: JSON.stringify(deploymentPayload),
       });
+      
+      console.log('Deployment response status:', response.status);
       
       if (response.ok) {
         const result = await response.json();
+        console.log('Deployment result:', result);
+        
         setIsDeployed(true);
         setDeployResult(`✅ ${result.message}
 
@@ -365,14 +416,30 @@ Approved Mappings: ${approvedMappings.length}
 Integration Status: ${result.status}
 Endpoint: ${result.endpoint}
 Deployment ID: ${result.deploymentId}
+Timestamp: ${result.timestamp}
 
 Your PMS integration is now ready to receive and process feeds!`);
       } else {
-        throw new Error(`Deployment failed: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('Deployment failed:', response.status, errorText);
+        
+        throw new Error(`Deployment failed: ${response.status} ${response.statusText}\n${errorText}`);
       }
       
     } catch (error) {
-      setDeployResult('❌ Deployment failed: ' + error);
+      console.error('Deployment error:', error);
+      
+      setDeployResult(`❌ Deployment Failed!
+
+Error Details:
+• Type: ${error instanceof Error ? error.name : 'Unknown'}
+• Message: ${error instanceof Error ? error.message : String(error)}
+
+Please check:
+• Backend server is running on http://localhost:8000
+• At least one mapping is approved
+• Network connectivity
+• Backend deployment endpoint is accessible`);
     } finally {
       setIsDeploying(false);
     }
@@ -398,6 +465,25 @@ Next Steps:
 
 You can now start sending PMS feeds to: /api/pms/${pmsCode}`);
   };
+
+  const checkBackendStatus = async () => {
+    setBackendStatus('checking');
+    try {
+      const response = await fetch('http://localhost:8000/api/mapping/ai-suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pmsCode: 'test', pmsSpec: 'test', unmappedFields: [] }),
+      });
+      setBackendStatus('online');
+    } catch (error) {
+      setBackendStatus('offline');
+    }
+  };
+
+  // Check backend status when component mounts
+  React.useEffect(() => {
+    checkBackendStatus();
+  }, []);
 
   const renderStepContent = (step: number) => {
     switch (step) {
@@ -638,23 +724,81 @@ You can now start sending PMS feeds to: /api/pms/${pmsCode}`);
             <Collapse in={expandedSections.filePreview}>
               {generatedFiles.length > 0 ? (
                 <Box>
-                  {generatedFiles.map((file, index) => (
-                    <Card key={index} sx={{ mb: 2 }}>
-                      <CardContent>
-                        <Typography variant="subtitle1" gutterBottom>
-                          {file}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary">
-                          Generated configuration file for {pmsCode}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  <Alert severity="info" sx={{ mb: 2 }}>
+                    <Typography variant="body2">
+                      These files will be generated during deployment based on your approved mappings and PMS configuration.
+                    </Typography>
+                  </Alert>
+                  
+                  {generatedFiles.map((file, index) => {
+                    const fileType = file.split('.').pop()?.toLowerCase();
+                    const getFileDescription = (filename: string) => {
+                      if (filename.includes('translator')) return 'C# translator class that handles PMS feed processing';
+                      if (filename.includes('mapping')) return 'JSON configuration with field mappings';
+                      if (filename.includes('config')) return 'XML configuration for integration settings';
+                      return 'Configuration file for PMS integration';
+                    };
+                    
+                    const getFileIcon = (type: string) => {
+                      switch (type) {
+                        case 'cs': return '🔷';
+                        case 'json': return '📄';
+                        case 'xml': return '📋';
+                        default: return '📁';
+                      }
+                    };
+                    
+                    return (
+                      <Card key={index} sx={{ mb: 2, border: '1px solid #e0e0e0' }}>
+                        <CardContent>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                            <Typography variant="h6" sx={{ mr: 1 }}>
+                              {getFileIcon(fileType || '')}
+                            </Typography>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                              {file}
+                            </Typography>
+                          </Box>
+                          <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
+                            {getFileDescription(file)}
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                            <Chip 
+                              label={fileType?.toUpperCase() || 'FILE'} 
+                              size="small" 
+                              variant="outlined" 
+                              color="primary" 
+                            />
+                            <Chip 
+                              label="Preview" 
+                              size="small" 
+                              variant="outlined" 
+                              color="secondary" 
+                            />
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                  
+                  <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1, mt: 2 }}>
+                    <Typography variant="body2" color="textSecondary">
+                      <strong>Next:</strong> These files will be generated and deployed in step 5. 
+                      The translator will be activated and ready to process PMS feeds.
+                    </Typography>
+                  </Box>
                 </Box>
               ) : (
-                <Typography color="textSecondary">
-                  No files generated yet. Please complete previous steps first.
-                </Typography>
+                <Box>
+                  <Alert severity="warning" sx={{ mb: 2 }}>
+                    <Typography variant="body2">
+                      No files generated yet. Please complete step 1 to generate mapping suggestions first.
+                    </Typography>
+                  </Alert>
+                  <Typography color="textSecondary">
+                    Files will be generated based on your PMS specification and approved mappings.
+                  </Typography>
+                </Box>
               )}
             </Collapse>
           </Paper>
@@ -666,20 +810,49 @@ You can now start sending PMS feeds to: /api/pms/${pmsCode}`);
             <Typography variant="h6" gutterBottom>
               Test Translation
             </Typography>
+            
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <Typography variant="body2">
+                Test the translation functionality by sending sample data to the PMS integration endpoint.
+              </Typography>
+            </Alert>
+            
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Test Configuration:
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                • PMS Code: {pmsCode}<br/>
+                • Endpoint: /api/pms/{pmsCode}/test<br/>
+                • Sample Data: "Sample PMS feed data for testing"
+              </Typography>
+            </Box>
+            
             <Button
               variant="contained"
-              startIcon={<PlayArrowIcon />}
+              startIcon={isLoading ? <CircularProgress size={20} /> : <PlayArrowIcon />}
               onClick={handleTestTranslation}
-              disabled={isLoading}
+              disabled={isLoading || !pmsCode}
               sx={{ mb: 2 }}
             >
-              {isLoading ? <CircularProgress size={20} /> : 'Test Translation'}
+              {isLoading ? 'Testing...' : 'Test Translation'}
             </Button>
             
             {testResult && (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                <Typography variant="body2">
+              <Alert 
+                severity={testResult.includes('Error') ? 'error' : 'success'} 
+                sx={{ mt: 2 }}
+              >
+                <Typography variant="body2" component="pre" sx={{ whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
                   {testResult}
+                </Typography>
+              </Alert>
+            )}
+            
+            {!pmsCode && (
+              <Alert severity="warning" sx={{ mt: 2 }}>
+                <Typography variant="body2">
+                  Please complete step 1 to set up a PMS code before testing.
                 </Typography>
               </Alert>
             )}
@@ -704,6 +877,29 @@ You can now start sending PMS feeds to: /api/pms/${pmsCode}`);
                   </Typography>
                 </Alert>
                 
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                  <Typography variant="body2">Backend Status:</Typography>
+                  {backendStatus === 'checking' && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CircularProgress size={16} />
+                      <Typography variant="body2" color="textSecondary">Checking...</Typography>
+                    </Box>
+                  )}
+                  {backendStatus === 'online' && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'success.main' }} />
+                      <Typography variant="body2" color="success.main">Online</Typography>
+                    </Box>
+                  )}
+                  {backendStatus === 'offline' && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'error.main' }} />
+                      <Typography variant="body2" color="error.main">Offline</Typography>
+                      <Button size="small" onClick={checkBackendStatus}>Retry</Button>
+                    </Box>
+                  )}
+                </Box>
+                
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="subtitle2" gutterBottom>
                     Deployment Summary:
@@ -716,16 +912,55 @@ You can now start sending PMS feeds to: /api/pms/${pmsCode}`);
                   </Typography>
                 </Box>
                 
-                <Button
-                  variant="contained"
-                  color="success"
-                  startIcon={isDeploying ? <CircularProgress size={20} /> : <CheckCircleIcon />}
-                  size="large"
-                  onClick={handleDeployIntegration}
-                  disabled={isDeploying}
-                >
-                  {isDeploying ? 'Deploying...' : 'Deploy Integration'}
-                </Button>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    startIcon={isDeploying ? <CircularProgress size={20} /> : <CheckCircleIcon />}
+                    size="large"
+                    onClick={handleDeployIntegration}
+                    disabled={isDeploying}
+                  >
+                    {isDeploying ? 'Deploying...' : 'Deploy Integration'}
+                  </Button>
+                  
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    onClick={async () => {
+                      // Test deployment with sample data
+                      const testData = {
+                        pmsCode: 'testhotel',
+                        pmsName: 'Test Hotel PMS',
+                        mappings: [
+                          { sourceField: 'roomType', targetField: 'InvCode', confidence: 0.95 },
+                          { sourceField: 'ratePlan', targetField: 'RatePlanCode', confidence: 0.92 }
+                        ],
+                        generatedFiles: ['testhotel_translator.cs', 'mapping.json', 'manifest.json']
+                      };
+                      
+                      try {
+                        const response = await fetch('http://localhost:8000/api/deployment/deploy', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify(testData),
+                        });
+                        
+                                                 if (response.ok) {
+                           const result = await response.json();
+                           alert(`✅ Test deployment successful!\n\nFiles created:\n${result.files.join('\n')}\n\nCheck the ../pms/testhotel/ folder.`);
+                         } else {
+                          const error = await response.text();
+                          alert(`❌ Test deployment failed: ${response.status} ${response.statusText}\n\n${error}`);
+                        }
+                      } catch (error) {
+                        alert(`❌ Test deployment error: ${error}\n\nMake sure the backend server is running on http://localhost:8000`);
+                      }
+                    }}
+                  >
+                    Test Deployment
+                  </Button>
+                </Box>
               </>
             ) : (
               <>
