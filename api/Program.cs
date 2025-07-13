@@ -42,7 +42,7 @@ static IPmsTranslator? GetTranslator(string pmscode)
 // Placeholder PMS API endpoint
 app.MapPost("/pms/{pmscode}", async (string pmscode, HttpRequest request, ILogger<Program> logger) =>
 {
-    logger.LogInformation("Received PMS feed request for PMS code: {PmsCode}", pmscode);
+    logger.LogInformation("[{Timestamp}] Received PMS feed request for PMS code: {PmsCode}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode);
     
     try
     {
@@ -53,45 +53,45 @@ app.MapPost("/pms/{pmscode}", async (string pmscode, HttpRequest request, ILogge
             pmsFeed = await reader.ReadToEndAsync();
         }
         
-        logger.LogInformation("Read PMS feed for {PmsCode}, length: {FeedLength} characters", pmscode, pmsFeed?.Length ?? 0);
+        logger.LogInformation("[{Timestamp}] Read PMS feed for {PmsCode}, length: {FeedLength} characters", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode, pmsFeed?.Length ?? 0);
         
         if (string.IsNullOrWhiteSpace(pmsFeed))
         {
-            logger.LogWarning("Empty PMS feed received for {PmsCode}", pmscode);
+            logger.LogWarning("[{Timestamp}] Empty PMS feed received for {PmsCode}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode);
             return Results.BadRequest("PMS feed is required in the request body.");
         }
         
         // Validate PMS code
         if (string.IsNullOrWhiteSpace(pmscode) || !System.Text.RegularExpressions.Regex.IsMatch(pmscode, "^[a-zA-Z0-9_-]+$"))
         {
-            logger.LogWarning("Invalid PMS code received: {PmsCode}", pmscode);
+            logger.LogWarning("[{Timestamp}] Invalid PMS code received: {PmsCode}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode);
             return Results.BadRequest("Invalid PMS code. Only letters, numbers, dash, and underscore are allowed.");
         }
         
         // Auto-discover and load the correct translator
-        logger.LogInformation("Attempting to load translator for PMS code: {PmsCode}", pmscode);
+        logger.LogInformation("[{Timestamp}] Attempting to load translator for PMS code: {PmsCode}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode);
         var translator = GetTranslator(pmscode);
         if (translator == null)
         {
-            logger.LogError("No translator found for PMS code: {PmsCode}", pmscode);
+            logger.LogError("[{Timestamp}] No translator found for PMS code: {PmsCode}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode);
             return Results.NotFound($"No translator found for PMS code: {pmscode}");
         }
         
-        logger.LogInformation("Successfully loaded translator for {PmsCode}: {TranslatorType}", pmscode, translator.GetType().Name);
+        logger.LogInformation("[{Timestamp}] Successfully loaded translator for {PmsCode}: {TranslatorType}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode, translator.GetType().Name);
         
         // Use the translator to process the feed
-        logger.LogInformation("Translating PMS feed to RGBridge format for {PmsCode}", pmscode);
+        logger.LogInformation("[{Timestamp}] Translating PMS feed to RGBridge format for {PmsCode}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode);
         var rgbridgeMessage = await translator.TranslateToRgbridgeAsync(pmsFeed);
         
-        logger.LogInformation("Successfully translated PMS feed for {PmsCode}, response length: {ResponseLength} characters", 
-            pmscode, rgbridgeMessage?.Length ?? 0);
+        logger.LogInformation("[{Timestamp}] Successfully translated PMS feed for {PmsCode}, response length: {ResponseLength} characters", 
+            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode, rgbridgeMessage?.Length ?? 0);
         
         // Return the translated message
         return Results.Text(rgbridgeMessage, "application/xml");
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Error processing PMS feed for {PmsCode}: {ErrorMessage}", pmscode, ex.Message);
+        logger.LogError(ex, "[{Timestamp}] Error processing PMS feed for {PmsCode}: {ErrorMessage}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode, ex.Message);
         return Results.Problem($"Error processing PMS feed: {ex.Message}");
     }
 })
@@ -99,13 +99,13 @@ app.MapPost("/pms/{pmscode}", async (string pmscode, HttpRequest request, ILogge
 
 app.MapPost("/mappings/{pmscode}", async (string pmscode, HttpRequest request, ILogger<Program> logger) =>
 {
-    logger.LogInformation("Received PMS mapping onboarding request for PMS code: {PmsCode}", pmscode);
+    logger.LogInformation("[{Timestamp}] Received PMS mapping onboarding request for PMS code: {PmsCode}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode);
     
     try
     {
         // Read PMS name from header (optional)
         string pmsName = request.Headers["X-PMS-Name"].FirstOrDefault() ?? "";
-        logger.LogInformation("PMS name from header: {PmsName}", pmsName);
+        logger.LogInformation("[{Timestamp}] PMS name from header: {PmsName}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmsName);
 
         // Read PMS spec from body
         string pmsSpec;
@@ -114,40 +114,40 @@ app.MapPost("/mappings/{pmscode}", async (string pmscode, HttpRequest request, I
             pmsSpec = await reader.ReadToEndAsync();
         }
         
-        logger.LogInformation("Read PMS spec for {PmsCode}, length: {SpecLength} characters", pmscode, pmsSpec?.Length ?? 0);
+        logger.LogInformation("[{Timestamp}] Read PMS spec for {PmsCode}, length: {SpecLength} characters", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode, pmsSpec?.Length ?? 0);
         
         if (string.IsNullOrWhiteSpace(pmsSpec))
         {
-            logger.LogWarning("Empty PMS spec received for {PmsCode}", pmscode);
+            logger.LogWarning("[{Timestamp}] Empty PMS spec received for {PmsCode}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode);
             return Results.BadRequest("PMS spec is required in the request body.");
         }
         
         // Validate PMS code (alphanumeric, dash, underscore)
         if (string.IsNullOrWhiteSpace(pmscode) || !System.Text.RegularExpressions.Regex.IsMatch(pmscode, "^[a-zA-Z0-9_-]+$"))
         {
-            logger.LogWarning("Invalid PMS code received: {PmsCode}", pmscode);
+            logger.LogWarning("[{Timestamp}] Invalid PMS code received: {PmsCode}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode);
             return Results.BadRequest("Invalid PMS code. Only letters, numbers, dash, and underscore are allowed.");
         }
         
         // Create folder under ../pms/{pmscode}
         var pmsFolder = Path.Combine("..", "pms", pmscode);
-        logger.LogInformation("Creating PMS folder: {PmsFolder}", pmsFolder);
+        logger.LogInformation("[{Timestamp}] Creating PMS folder: {PmsFolder}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmsFolder);
         Directory.CreateDirectory(pmsFolder);
-        logger.LogInformation("Successfully created PMS folder: {PmsFolder}", pmsFolder);
+        logger.LogInformation("[{Timestamp}] Successfully created PMS folder: {PmsFolder}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmsFolder);
         
         // Save PMS spec
         var specPath = Path.Combine(pmsFolder, "spec.txt");
-        logger.LogInformation("Saving PMS spec to: {SpecPath}", specPath);
+        logger.LogInformation("[{Timestamp}] Saving PMS spec to: {SpecPath}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), specPath);
         await File.WriteAllTextAsync(specPath, pmsSpec, Encoding.UTF8);
-        logger.LogInformation("Successfully saved PMS spec to: {SpecPath}", specPath);
+        logger.LogInformation("[{Timestamp}] Successfully saved PMS spec to: {SpecPath}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), specPath);
         
         // Save PMS name as metadata (optional)
         if (!string.IsNullOrWhiteSpace(pmsName))
         {
             var metaPath = Path.Combine(pmsFolder, "meta.txt");
-            logger.LogInformation("Saving PMS metadata to: {MetaPath}", metaPath);
+            logger.LogInformation("[{Timestamp}] Saving PMS metadata to: {MetaPath}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), metaPath);
             await File.WriteAllTextAsync(metaPath, pmsName, Encoding.UTF8);
-            logger.LogInformation("Successfully saved PMS metadata to: {MetaPath}", metaPath);
+            logger.LogInformation("[{Timestamp}] Successfully saved PMS metadata to: {MetaPath}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), metaPath);
         }
         
         // Return a mock mapping suggestion (in real use, call AI or mapping logic)
@@ -165,14 +165,14 @@ app.MapPost("/mappings/{pmscode}", async (string pmscode, HttpRequest request, I
             message = $"Mock mapping suggestion for {pmscode}"
         };
         
-        logger.LogInformation("Successfully processed PMS mapping onboarding for {PmsCode}, returning {MappingCount} mapping suggestions", 
-            pmscode, mockMapping.mappings.Length);
+        logger.LogInformation("[{Timestamp}] Successfully processed PMS mapping onboarding for {PmsCode}, returning {MappingCount} mapping suggestions", 
+            DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode, mockMapping.mappings.Length);
         
         return Results.Json(mockMapping);
     }
     catch (Exception ex)
     {
-        logger.LogError(ex, "Error processing PMS mapping onboarding for {PmsCode}: {ErrorMessage}", pmscode, ex.Message);
+        logger.LogError(ex, "[{Timestamp}] Error processing PMS mapping onboarding for {PmsCode}: {ErrorMessage}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode, ex.Message);
         return Results.Problem($"Error processing PMS mapping onboarding: {ex.Message}");
     }
 }).WithName("PmsMappingOnboarding");
