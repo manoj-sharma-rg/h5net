@@ -639,17 +639,35 @@ You can now start sending PMS feeds to: /api/pms/${pmsCode}`);
                 <Typography variant="h6">
                   Unmapped Fields ({unmappedFields.length})
                 </Typography>
-                {unmappedFields.length > 0 && (
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={generateAISuggestions}
-                    disabled={isGeneratingSuggestions}
-                    startIcon={isGeneratingSuggestions ? <CircularProgress size={16} /> : null}
-                  >
-                    {isGeneratingSuggestions ? 'Generating...' : 'Get AI Suggestions'}
-                  </Button>
-                )}
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  {unmappedFields.length > 0 && (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      onClick={generateAISuggestions}
+                      disabled={isGeneratingSuggestions}
+                      startIcon={isGeneratingSuggestions ? <CircularProgress size={16} /> : null}
+                    >
+                      {isGeneratingSuggestions ? 'Generating...' : 'Get AI Suggestions'}
+                    </Button>
+                  )}
+                  {Object.keys(unmappedSuggestions).length > 0 && (
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => {
+                        // Apply first suggestion for all unmapped fields
+                        Object.keys(unmappedSuggestions).forEach(field => {
+                          if (unmappedSuggestions[field] && unmappedSuggestions[field].length > 0) {
+                            applySuggestion(field, unmappedSuggestions[field][0]);
+                          }
+                        });
+                      }}
+                    >
+                      Approve All Suggestions
+                    </Button>
+                  )}
+                </Box>
               </Box>
               
               <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
@@ -769,12 +787,51 @@ You can now start sending PMS feeds to: /api/pms/${pmsCode}`);
                               variant="outlined" 
                               color="primary" 
                             />
-                            <Chip 
-                              label="Preview" 
-                              size="small" 
-                              variant="outlined" 
-                              color="secondary" 
-                            />
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              color="secondary"
+                              startIcon={<PreviewIcon />}
+                              onClick={() => {
+                                // Generate preview content based on file type
+                                let previewContent = '';
+                                if (file.includes('translator')) {
+                                  previewContent = `public class ${pmsCode.charAt(0).toUpperCase() + pmsCode.slice(1)}Translator : IPmsTranslator
+{
+    public async Task<TranslationResult> TranslateAsync(string pmsData)
+    {
+        // Translation logic will be implemented here
+        // Based on approved mappings: ${mappingSuggestions.filter(m => m.approved).map(m => `${m.sourceField}->${m.targetField}`).join(', ')}
+        return new TranslationResult { Success = true, Data = "Translated data" };
+    }
+}`;
+                                } else if (file.includes('mapping')) {
+                                  previewContent = JSON.stringify({
+                                    pmsCode: pmsCode,
+                                    mappings: mappingSuggestions.filter(m => m.approved).map(m => ({
+                                      sourceField: m.sourceField,
+                                      targetField: m.targetField,
+                                      confidence: m.confidence
+                                    }))
+                                  }, null, 2);
+                                } else if (file.includes('config')) {
+                                  previewContent = `<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <pmsIntegration>
+    <pmsCode>${pmsCode}</pmsCode>
+    <pmsName>${pmsName}</pmsName>
+    <enabled>true</enabled>
+    <endpoint>/api/pms/${pmsCode}</endpoint>
+  </pmsIntegration>
+</configuration>`;
+                                }
+                                
+                                // Show preview in alert
+                                alert(`Preview of ${file}:\n\n${previewContent}`);
+                              }}
+                            >
+                              Preview
+                            </Button>
                           </Box>
                         </CardContent>
                       </Card>
