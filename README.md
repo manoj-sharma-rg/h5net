@@ -112,12 +112,24 @@ The platform uses a modular architecture with:
 - **Mapping Engine**: AI-assisted field mapping and validation
 - **File Storage**: Versioned mappings and specifications per PMS
 
+## CI/CD Pipeline
+
+The project includes automated CI/CD pipelines using GitHub Actions:
+
+- **Automated Testing**: Runs on every push and pull request
+- **Security Scanning**: CodeQL and Trivy vulnerability scans
+- **Dependency Management**: Weekly dependency updates and security checks
+- **Automated Deployment**: Staging (develop branch) and Production (main branch)
+
+For detailed CI/CD documentation, see [`.github/README.md`](.github/README.md).
+
 ## Contributing
 
 1. Follow the established folder structure
 2. Add comprehensive logging for debugging
 3. Implement proper error handling
 4. Update documentation for new features
+5. Ensure all CI/CD checks pass before merging
 
 ## License
 

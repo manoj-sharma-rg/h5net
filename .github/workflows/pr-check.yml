@@ -1,0 +1,98 @@
+name: Pull Request Check
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '18.x'
+
+jobs:
+  validate-pr:
+    name: Validate Pull Request
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: ui/package-lock.json
+        
+    - name: Validate Backend
+      run: |
+        echo "Validating backend..."
+        dotnet restore api/api.csproj
+        dotnet build api/api.csproj --configuration Release
+        dotnet test api/api.csproj --no-build --verbosity normal --configuration Release
+        
+    - name: Validate Frontend
+      working-directory: ui
+      run: |
+        echo "Validating frontend..."
+        npm ci
+        npm run lint
+        npm test -- --coverage --watchAll=false
+        
+    - name: Check for sensitive data
+      run: |
+        echo "Checking for sensitive data in code..."
+        # Check for hardcoded secrets, API keys, etc.
+        if grep -r "password\|secret\|key\|token" --include="*.cs" --include="*.js" --include="*.ts" --include="*.json" . | grep -v "node_modules" | grep -v "bin" | grep -v "obj"; then
+          echo "⚠️  Potential sensitive data found in code"
+          exit 1
+        fi
+        
+    - name: Validate file structure
+      run: |
+        echo "Validating project structure..."
+        # Check if required files exist
+        test -f api/api.csproj || (echo "❌ Missing api.csproj" && exit 1)
+        test -f ui/package.json || (echo "❌ Missing package.json" && exit 1)
+        test -f README.md || (echo "❌ Missing README.md" && exit 1)
+        echo "✅ Project structure is valid"
+
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: ui/package-lock.json
+        
+    - name: Install dependencies
+      working-directory: ui
+      run: npm ci
+      
+    - name: Run ESLint
+      working-directory: ui
+      run: npm run lint
+      
+    - name: Check TypeScript compilation
+      working-directory: ui
+      run: npx tsc --noEmit
+      
+    - name: Check for console.log statements
+      run: |
+        echo "Checking for console.log statements..."
+        if grep -r "console\.log" ui/src/ --include="*.ts" --include="*.tsx"; then
+          echo "⚠️  console.log statements found in production code"
+          exit 1
+        fi 
