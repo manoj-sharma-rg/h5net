@@ -65,9 +65,9 @@ public class DeploymentController : ControllerBase
                 deploymentId = Guid.NewGuid().ToString(),
                 files = new[]
                 {
-                    $"{request.PmsCode}Translator.cs",
-                    "mapping.json",
-                    "manifest.json"
+                    $"ari_Translator.cs",
+                    "ari_mapping.json",
+                    "ari_manifest.json"
                 },
                 endpoint = $"/api/pms/{request.PmsCode}",
                 status = "active",
