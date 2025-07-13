@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { Box, Stepper, Step, StepLabel, Button, Typography, Paper, TextField, InputLabel, Stack, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
+import { Box, Stepper, Step, StepLabel, Button, Typography, Paper, TextField, InputLabel, Stack, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Collapse, IconButton } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 
 const steps = [
   'Upload/Define PMS Spec',
@@ -28,7 +30,9 @@ function getStepContent(
   handlePmsCodeChange: (e: ChangeEvent<HTMLInputElement>) => void,
   pmsName: string,
   handlePmsNameChange: (e: ChangeEvent<HTMLInputElement>) => void,
-  mappingMessage: string
+  mappingMessage: string,
+  specExpanded: boolean,
+  handleSpecToggle: () => void
 ) {
   switch (step) {
     case 0:
@@ -65,51 +69,113 @@ function getStepContent(
             onChange={handleFileUpload}
             style={{ marginBottom: 16 }}
           />
-          <InputLabel htmlFor="pms-spec-text">Or paste PMS Spec below</InputLabel>
-          <TextField
-            id="pms-spec-text"
-            label="PMS Spec (raw text)"
-            multiline
-            minRows={6}
-            value={pmsSpec}
-            onChange={handleSpecChange}
-            variant="outlined"
-            fullWidth
-            placeholder="Paste your PMS spec here (JSON, XML, GraphQL, SOAP, etc.)"
-          />
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+              <InputLabel htmlFor="pms-spec-text">Or paste PMS Spec below</InputLabel>
+              <IconButton onClick={handleSpecToggle} size="small">
+                {specExpanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              </IconButton>
+            </Box>
+            <Collapse in={specExpanded}>
+              <TextField
+                id="pms-spec-text"
+                label="PMS Spec (raw text)"
+                multiline
+                minRows={6}
+                value={pmsSpec}
+                onChange={handleSpecChange}
+                variant="outlined"
+                fullWidth
+                placeholder="Paste your PMS spec here (JSON, XML, GraphQL, SOAP, etc.)"
+              />
+            </Collapse>
+          </Box>
         </Stack>
       );
     case 1:
       return pmsSpec ? (
         <Stack spacing={2}>
-          <Typography>Step 2: AI-assisted mapping suggestions will appear here.</Typography>
+          <Typography variant="h6" color="primary">Step 2: AI-assisted mapping suggestions</Typography>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 80 }}>
               <CircularProgress />
             </Box>
           ) : mappingSuggestions.length > 0 ? (
-            <Paper elevation={1} sx={{ p: 2, background: '#e3f2fd' }}>
-              <Typography color="primary" sx={{ mb: 2 }}>{mappingMessage}</Typography>
+            <Paper elevation={1} sx={{ p: 3, background: '#e3f2fd' }}>
+              <Typography color="primary" sx={{ mb: 2, fontWeight: 'bold' }}>
+                {mappingMessage}
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
+                Review the AI-generated mapping suggestions below. You can approve or modify these mappings in the next step.
+              </Typography>
               <TableContainer>
                 <Table size="small">
                   <TableHead>
-                    <TableRow>
-                      <TableCell>PMS Field</TableCell>
-                      <TableCell>RGBridge Field</TableCell>
-                      <TableCell>Confidence</TableCell>
+                    <TableRow sx={{ backgroundColor: 'primary.light' }}>
+                      <TableCell sx={{ fontWeight: 'bold', color: 'white' }}>PMS Field</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold', color: 'white' }}>RGBridge Field</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold', color: 'white' }}>Confidence</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold', color: 'white' }}>Status</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
                     {mappingSuggestions.map((m, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>{m.pmsField}</TableCell>
-                        <TableCell>{m.rgbridgeField}</TableCell>
-                        <TableCell>{(m.confidence * 100).toFixed(1)}%</TableCell>
+                      <TableRow key={idx} sx={{ 
+                        backgroundColor: m.confidence > 0.8 ? '#e8f5e9' : 
+                                       m.confidence > 0.6 ? '#fff3e0' : '#ffebee'
+                      }}>
+                        <TableCell sx={{ fontWeight: 'medium' }}>{m.pmsField}</TableCell>
+                        <TableCell sx={{ fontWeight: 'medium' }}>{m.rgbridgeField}</TableCell>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ 
+                              width: 60, 
+                              height: 8, 
+                              backgroundColor: 'grey.300', 
+                              borderRadius: 1,
+                              overflow: 'hidden'
+                            }}>
+                              <Box sx={{ 
+                                width: `${m.confidence * 100}%`, 
+                                height: '100%', 
+                                backgroundColor: m.confidence > 0.8 ? 'success.main' : 
+                                               m.confidence > 0.6 ? 'warning.main' : 'error.main'
+                              }} />
+                            </Box>
+                            <Typography variant="caption">
+                              {(m.confidence * 100).toFixed(0)}%
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Typography 
+                            variant="caption" 
+                            sx={{ 
+                              px: 1, 
+                              py: 0.5, 
+                              borderRadius: 1,
+                              backgroundColor: m.confidence > 0.8 ? 'success.light' : 
+                                             m.confidence > 0.6 ? 'warning.light' : 'error.light',
+                              color: m.confidence > 0.8 ? 'success.dark' : 
+                                    m.confidence > 0.6 ? 'warning.dark' : 'error.dark',
+                              fontWeight: 'medium'
+                            }}
+                          >
+                            {m.confidence > 0.8 ? 'High' : m.confidence > 0.6 ? 'Medium' : 'Low'}
+                          </Typography>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </TableContainer>
+              <Box sx={{ mt: 3, p: 2, backgroundColor: 'background.paper', borderRadius: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Summary:</strong> {mappingSuggestions.filter(m => m.confidence > 0.8).length} high-confidence mappings, 
+                  {mappingSuggestions.filter(m => m.confidence > 0.6 && m.confidence <= 0.8).length} medium-confidence mappings, 
+                  {mappingSuggestions.filter(m => m.confidence <= 0.6).length} low-confidence mappings that need manual review.
+                </Typography>
+              </Box>
             </Paper>
           ) : (
             <Paper elevation={1} sx={{ p: 2, background: '#e3f2fd' }}>
@@ -153,6 +219,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [pmsCode, setPmsCode] = useState('');
   const [pmsName, setPmsName] = useState('');
+  const [specExpanded, setSpecExpanded] = useState(false);
 
   const handleNext = async () => {
     if (activeStep === 0 && pmsSpec && pmsCode && pmsName) {
@@ -210,6 +277,7 @@ function App() {
     setMappingMessage('');
     setPmsCode('');
     setPmsName('');
+    setSpecExpanded(false);
   };
 
   const handleSpecChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -233,6 +301,10 @@ function App() {
 
   const handlePmsNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     setPmsName(e.target.value);
+  };
+
+  const handleSpecToggle = () => {
+    setSpecExpanded(!specExpanded);
   };
 
   const canProceed = activeStep !== 0 || (pmsSpec && pmsCode && pmsName && !loading);
@@ -262,7 +334,9 @@ function App() {
             handlePmsCodeChange,
             pmsName,
             handlePmsNameChange,
-            mappingMessage
+            mappingMessage,
+            specExpanded,
+            handleSpecToggle
           )}
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>
