@@ -14,20 +14,16 @@ Scaffold the frontend in ui/
 Scaffold the multi-step wizard in React app, with placeholder steps for each part of the onboarding flow 
 scaffold steps of the wizard
 Backend logic to use the PMS code for routing and folder creation
+add logging
+ui wizard start
 
 ======================================================
 
-backend development (e.g., plugin system, mapping, validation)
-Integrating outbound delivery into your API flow (e.g., after translation).
-setup ui: cd ui && npx create-react-app . --template cra-template-pwa
-==
- and Node.js projects (requirements.txt, package.json)
+make sure backend api run on .net8. 
+frontend ui vite with react 18- modularize, add pages like dashboard and integrated pms
+
+
 Setting up the CI/CD pipeline
-
-
-
-
-
 api gateway : new or old
 db entry for integration
 pricing type support
@@ -35,6 +31,6 @@ attributes support
 add a tab in wizard before last page
 
 
--------------
+======================================================
 dotnet new webapi -o api --no-https
 npm run dev
