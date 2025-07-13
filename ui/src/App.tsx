@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { Box, Stepper, Step, StepLabel, Button, Typography, Paper, TextField, InputLabel, Stack, CircularProgress } from '@mui/material';
+import { Box, Stepper, Step, StepLabel, Button, Typography, Paper, TextField, InputLabel, Stack, CircularProgress, Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@mui/material';
 
 const steps = [
   'Upload/Define PMS Spec',
@@ -11,17 +11,24 @@ const steps = [
   'Deploy Integration',
 ];
 
+interface MappingSuggestion {
+  pmsField: string;
+  rgbridgeField: string;
+  confidence: number;
+}
+
 function getStepContent(
   step: number,
   pmsSpec: string,
   handleSpecChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void,
   handleFileUpload: (e: ChangeEvent<HTMLInputElement>) => void,
-  mappingSuggestions: string,
+  mappingSuggestions: MappingSuggestion[],
   loading: boolean,
   pmsCode: string,
   handlePmsCodeChange: (e: ChangeEvent<HTMLInputElement>) => void,
   pmsName: string,
-  handlePmsNameChange: (e: ChangeEvent<HTMLInputElement>) => void
+  handlePmsNameChange: (e: ChangeEvent<HTMLInputElement>) => void,
+  mappingMessage: string
 ) {
   switch (step) {
     case 0:
@@ -80,11 +87,33 @@ function getStepContent(
             <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 80 }}>
               <CircularProgress />
             </Box>
+          ) : mappingSuggestions.length > 0 ? (
+            <Paper elevation={1} sx={{ p: 2, background: '#e3f2fd' }}>
+              <Typography color="primary" sx={{ mb: 2 }}>{mappingMessage}</Typography>
+              <TableContainer>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>PMS Field</TableCell>
+                      <TableCell>RGBridge Field</TableCell>
+                      <TableCell>Confidence</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {mappingSuggestions.map((m, idx) => (
+                      <TableRow key={idx}>
+                        <TableCell>{m.pmsField}</TableCell>
+                        <TableCell>{m.rgbridgeField}</TableCell>
+                        <TableCell>{(m.confidence * 100).toFixed(1)}%</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Paper>
           ) : (
             <Paper elevation={1} sx={{ p: 2, background: '#e3f2fd' }}>
-              <Typography color="primary">
-                {mappingSuggestions || '(Placeholder) Mapping suggestions will be generated here based on your uploaded PMS spec.'}
-              </Typography>
+              <Typography color="primary">(Placeholder) Mapping suggestions will be generated here based on your uploaded PMS spec.</Typography>
             </Paper>
           )}
         </Stack>
@@ -119,28 +148,52 @@ function getStepContent(
 function App() {
   const [activeStep, setActiveStep] = useState(0);
   const [pmsSpec, setPmsSpec] = useState('');
-  const [mappingSuggestions, setMappingSuggestions] = useState('');
+  const [mappingSuggestions, setMappingSuggestions] = useState<MappingSuggestion[]>([]);
+  const [mappingMessage, setMappingMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [pmsCode, setPmsCode] = useState('');
   const [pmsName, setPmsName] = useState('');
 
   const handleNext = async () => {
     if (activeStep === 0 && pmsSpec && pmsCode && pmsName) {
+      console.log('Starting PMS onboarding process:', { pmsCode, pmsName, specLength: pmsSpec.length });
       setLoading(true);
-      setMappingSuggestions('');
+      setMappingSuggestions([]);
+      setMappingMessage('');
       try {
-        // Use the entered PMS code for the endpoint
-        const response = await fetch(`/pms/${encodeURIComponent(pmsCode)}`, {
+        const url = `http://localhost:8000/mappings/${encodeURIComponent(pmsCode)}`;
+        console.log('Making API request to:', url);
+        
+        const response = await fetch(url, {
           method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
+          headers: {
+            'Content-Type': 'text/plain',
+            'X-PMS-Name': pmsName,
+          },
           body: pmsSpec,
         });
-        const data = await response.text();
-        setMappingSuggestions(data);
-      } catch (err) {
-        setMappingSuggestions('Error contacting backend.');
+        
+        console.log('API response status:', response.status, response.statusText);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('API request failed:', errorText);
+          throw new Error(errorText);
+        }
+        
+        const data = await response.json();
+        console.log('API response data:', data);
+        
+        setMappingSuggestions(data.mappings || []);
+        setMappingMessage(data.message || 'Mapping suggestions generated.');
+        console.log('Successfully processed mapping suggestions:', data.mappings?.length || 0);
+      } catch (err: any) {
+        console.error('Error during PMS onboarding:', err);
+        setMappingSuggestions([]);
+        setMappingMessage('Error contacting backend: ' + (err?.message || err));
       } finally {
         setLoading(false);
+        console.log('PMS onboarding process completed');
       }
     }
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -153,7 +206,8 @@ function App() {
   const handleReset = () => {
     setActiveStep(0);
     setPmsSpec('');
-    setMappingSuggestions('');
+    setMappingSuggestions([]);
+    setMappingMessage('');
     setPmsCode('');
     setPmsName('');
   };
@@ -207,7 +261,8 @@ function App() {
             pmsCode,
             handlePmsCodeChange,
             pmsName,
-            handlePmsNameChange
+            handlePmsNameChange,
+            mappingMessage
           )}
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'row', pt: 2 }}>

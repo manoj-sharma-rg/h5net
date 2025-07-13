@@ -5,6 +5,8 @@ created this file 8steps.md
 scaffold structure
 Scaffold the backend API in api/
     dotnet new webapi -o api --no-https
+run api
+    dotnet run --project api
 Scaffold the frontend in ui/ 
      npm create vite@latest ui -- --template react-ts
      npm install
