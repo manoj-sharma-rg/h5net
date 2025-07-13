@@ -1,0 +1,117 @@
+﻿{
+    "body": {
+        "baseOccupancy": 1,
+        "derivation": {
+            "product": [
+                {
+                    "daysofWeek": [
+                        -1,
+                        0,
+                        1,
+                        2,
+                        3,
+                        4,
+                        5,
+                        6
+                    ],
+                    "endDate": null,
+                    "isNoEndDate": true,
+                    "priorityOrder": 1,
+                    "productLevelDerivation": [
+                        {
+                            "baseRate": 0,
+                            "derivations": [
+                                {
+                                    "derivationValue": "+0#-0",
+                                    "isBaseRate": false,
+                                    "occ": "A01"
+                                },
+                                {
+                                    "derivationValue": "+0#-0",
+                                    "isBaseRate": true,
+                                    "occ": "A01"
+                                },
+                                {
+                                    "derivationValue": "+0#-0",
+                                    "isBaseRate": false,
+                                    "occ": "A02"
+                                },
+                                {
+                                    "derivationValue": "+0#-0",
+                                    "isBaseRate": false,
+                                    "occ": "A03"
+                                },
+                                {
+                                    "derivationValue": "+0#-0",
+                                    "isBaseRate": false,
+                                    "occ": "A04"
+                                },
+                                {
+                                    "derivationValue": "+0#-0",
+                                    "isBaseRate": false,
+                                    "occ": "C01"
+                                },
+                                {
+                                    "derivationValue": "+0#-0",
+                                    "isBaseRate": false,
+                                    "occ": "C02"
+                                },
+                                {
+                                    "derivationValue": "+0#-0",
+                                    "isBaseRate": false,
+                                    "occ": "C03"
+                                },
+                                {
+                                    "derivationValue": "+0#-0",
+                                    "isBaseRate": false,
+                                    "occ": "C04"
+                                },
+                                {
+                                    "derivationValue": "+0#-0",
+                                    "isBaseRate": false,
+                                    "occ": "Ex01"
+                                }
+                            ],
+                            "productCode": "12345-56789",
+                            "rateCode": "56789",
+                            "roomCode": "12345"
+                        }
+                    ],
+                    "season": "General",
+                    "startDate": "2025-07-09"
+                }
+            ],
+            "rate": [
+            ],
+            "room": [
+            ]
+        },
+        "isChildDerivation": true,
+        "isOccupancyLevelRate": true,
+        "isRoomBasePrice": false,
+        "isRoomPriceLinked": false,
+        "mappings": [
+            {
+                "feedType": "ARI",
+                "pmsName": "RESNEXUS",
+                "pmsPropertyCode": "16609",
+                "rate": [
+                    {
+                        "pmscode": "56789",
+                        "unocode": "56789"
+                    }
+                ],
+                "room": [
+                    {
+                        "pmscode": "12345",
+                        "unocode": "12345"
+                    }
+                ],
+                "unoHotelCode": "UNORNXZ"
+            }
+        ]
+    },
+    "description": null,
+    "status": true,
+    "statusCode": 200
+}

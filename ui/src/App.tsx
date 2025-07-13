@@ -156,11 +156,15 @@ function App() {
 
   const handleNext = async () => {
     if (activeStep === 0 && pmsSpec && pmsCode && pmsName) {
+      console.log('Starting PMS onboarding process:', { pmsCode, pmsName, specLength: pmsSpec.length });
       setLoading(true);
       setMappingSuggestions([]);
       setMappingMessage('');
       try {
-        const response = await fetch(`/mappings/${encodeURIComponent(pmsCode)}`, {
+        const url = `http://localhost:8000/mappings/${encodeURIComponent(pmsCode)}`;
+        console.log('Making API request to:', url);
+        
+        const response = await fetch(url, {
           method: 'POST',
           headers: {
             'Content-Type': 'text/plain',
@@ -168,17 +172,28 @@ function App() {
           },
           body: pmsSpec,
         });
+        
+        console.log('API response status:', response.status, response.statusText);
+        
         if (!response.ok) {
-          throw new Error(await response.text());
+          const errorText = await response.text();
+          console.error('API request failed:', errorText);
+          throw new Error(errorText);
         }
+        
         const data = await response.json();
+        console.log('API response data:', data);
+        
         setMappingSuggestions(data.mappings || []);
         setMappingMessage(data.message || 'Mapping suggestions generated.');
+        console.log('Successfully processed mapping suggestions:', data.mappings?.length || 0);
       } catch (err: any) {
+        console.error('Error during PMS onboarding:', err);
         setMappingSuggestions([]);
         setMappingMessage('Error contacting backend: ' + (err?.message || err));
       } finally {
         setLoading(false);
+        console.log('PMS onboarding process completed');
       }
     }
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
