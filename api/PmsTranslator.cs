@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 public interface IPmsTranslator
 {
     string PmsCode { get; }
@@ -16,4 +14,4 @@ public class SamplePmsTranslator : IPmsTranslator
         // TODO: Implement real translation logic
         return Task.FromResult($"<RGBridgeMessage>Translated from {PmsCode}: {pmsPayload}</RGBridgeMessage>");
     }
-} 
+}

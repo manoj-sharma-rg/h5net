@@ -1,7 +1,5 @@
-using System.Reflection;
-using System.Text;
-using api.Middleware;
 using api;
+using api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,9 +34,9 @@ builder.Services.AddSwaggerGen(c =>
 // Add CORS with configuration
 builder.Services.AddCors(options =>
 {
-    var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? 
+    var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ??
                         new[] { "http://localhost:5173" };
-    
+
     options.AddDefaultPolicy(policy =>
     {
         policy.WithOrigins(allowedOrigins)
