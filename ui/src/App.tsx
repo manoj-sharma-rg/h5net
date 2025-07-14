@@ -6,6 +6,7 @@ import Layout from './components/Layout/Layout';
 import Dashboard from './pages/Dashboard/Dashboard';
 import OnboardingWizard from './pages/OnboardingWizard/OnboardingWizard';
 import IntegratedPMS from './pages/IntegratedPMS/IntegratedPMS';
+import FeedTest from './pages/FeedTest/FeedTest';
 
 const theme = createTheme({
   palette: {
@@ -29,6 +30,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/onboard" element={<OnboardingWizard />} />
             <Route path="/integrated-pms" element={<IntegratedPMS />} />
+            <Route path="/feed-test" element={<FeedTest />} />
           </Routes>
         </Layout>
       </Router>
