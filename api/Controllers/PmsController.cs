@@ -169,6 +169,54 @@ public class PmsController : ControllerBase
             return Problem($"Error during test translation: {ex.Message}");
         }
     }
+
+    [HttpGet("integrated")]
+    public IActionResult GetIntegratedPmsList()
+    {
+        var pmsRoot = Path.Combine("pms");
+        var result = new List<object>();
+        if (Directory.Exists(pmsRoot))
+        {
+            foreach (var dir in Directory.GetDirectories(pmsRoot))
+            {
+                var manifestPath = Path.Combine(dir, "manifest.json");
+                if (System.IO.File.Exists(manifestPath))
+                {
+                    try
+                    {
+                        var manifestJson = System.IO.File.ReadAllText(manifestPath);
+                        var manifest = System.Text.Json.JsonSerializer.Deserialize<IntegratedPmsManifest>(manifestJson);
+                        if (manifest != null)
+                        {
+                            result.Add(new
+                            {
+                                code = manifest.pmsCode,
+                                name = manifest.pmsName,
+                                status = manifest.status,
+                                lastSync = manifest.deployedAt,
+                                recordsProcessed = manifest.mappingsCount, // Placeholder
+                                errors = 0, // Placeholder
+                                version = manifest.version
+                            });
+                        }
+                    }
+                    catch { /* skip invalid manifests */ }
+                }
+            }
+        }
+        return Ok(result);
+    }
+
+    public class IntegratedPmsManifest
+    {
+        public string pmsCode { get; set; } = string.Empty;
+        public string pmsName { get; set; } = string.Empty;
+        public string status { get; set; } = string.Empty;
+        public string deployedAt { get; set; } = string.Empty;
+        public int mappingsCount { get; set; }
+        public string endpoint { get; set; } = string.Empty;
+        public string version { get; set; } = string.Empty;
+    }
 }
 
 public class PmsFeedRequest

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Grid,
   Card,
@@ -19,6 +19,8 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  CircularProgress,
+  Alert,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -30,9 +32,8 @@ import {
 } from '@mui/icons-material';
 
 interface PMSSystem {
-  id: string;
-  name: string;
   code: string;
+  name: string;
   status: 'active' | 'inactive' | 'error';
   lastSync: string;
   recordsProcessed: number;
@@ -43,49 +44,27 @@ interface PMSSystem {
 const IntegratedPMS: React.FC = () => {
   const [selectedPMS, setSelectedPMS] = useState<PMSSystem | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [pmsSystems, setPmsSystems] = useState<PMSSystem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const pmsSystems: PMSSystem[] = [
-    {
-      id: '1',
-      name: 'HotelABC',
-      code: 'hotelabc',
-      status: 'active',
-      lastSync: '2024-01-15 14:30:00',
-      recordsProcessed: 1250,
-      errors: 0,
-      version: '1.2.3',
-    },
-    {
-      id: '2',
-      name: 'ResortXYZ',
-      code: 'resortxyz',
-      status: 'active',
-      lastSync: '2024-01-15 13:45:00',
-      recordsProcessed: 890,
-      errors: 2,
-      version: '1.1.0',
-    },
-    {
-      id: '3',
-      name: 'Motel123',
-      code: 'motel123',
-      status: 'error',
-      lastSync: '2024-01-15 10:15:00',
-      recordsProcessed: 0,
-      errors: 15,
-      version: '1.0.5',
-    },
-    {
-      id: '4',
-      name: 'Inn456',
-      code: 'inn456',
-      status: 'inactive',
-      lastSync: '2024-01-14 18:20:00',
-      recordsProcessed: 450,
-      errors: 0,
-      version: '1.3.1',
-    },
-  ];
+  useEffect(() => {
+    setLoading(true);
+    setError('');
+    fetch('http://localhost:8000/api/pms/integrated')
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        setPmsSystems(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError(`Failed to load PMS integrations: ${err}`);
+        setLoading(false);
+      });
+  }, []);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -123,71 +102,75 @@ const IntegratedPMS: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         Integrated PMS Systems
       </Typography>
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>PMS Name</TableCell>
-              <TableCell>Code</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Last Sync</TableCell>
-              <TableCell>Records Processed</TableCell>
-              <TableCell>Errors</TableCell>
-              <TableCell>Version</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {pmsSystems.map((pms) => (
-              <TableRow key={pms.id}>
-                <TableCell>
-                  <Typography variant="subtitle1">{pms.name}</Typography>
-                </TableCell>
-                <TableCell>
-                  <Chip label={pms.code} size="small" variant="outlined" />
-                </TableCell>
-                <TableCell>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    {getStatusIcon(pms.status)}
-                    <Chip
-                      label={pms.status}
-                      color={getStatusColor(pms.status) as any}
-                      size="small"
-                    />
-                  </Box>
-                </TableCell>
-                <TableCell>{pms.lastSync}</TableCell>
-                <TableCell>{pms.recordsProcessed.toLocaleString()}</TableCell>
-                <TableCell>
-                  <Typography
-                    color={pms.errors > 0 ? 'error' : 'success'}
-                  >
-                    {pms.errors}
-                  </Typography>
-                </TableCell>
-                <TableCell>{pms.version}</TableCell>
-                <TableCell>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleViewDetails(pms)}
-                    color="primary"
-                  >
-                    <ViewIcon />
-                  </IconButton>
-                  <IconButton size="small" color="primary">
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton size="small" color="error">
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : error ? (
+        <Alert severity="error">{error}</Alert>
+      ) : (
+        <TableContainer component={Paper}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>PMS Name</TableCell>
+                <TableCell>Code</TableCell>
+                <TableCell>Status</TableCell>
+                <TableCell>Last Sync</TableCell>
+                <TableCell>Records Processed</TableCell>
+                <TableCell>Errors</TableCell>
+                <TableCell>Version</TableCell>
+                <TableCell>Actions</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
+            </TableHead>
+            <TableBody>
+              {pmsSystems.map((pms) => (
+                <TableRow key={pms.code}>
+                  <TableCell>
+                    <Typography variant="subtitle1">{pms.name}</Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Chip label={pms.code} size="small" variant="outlined" />
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      {getStatusIcon(pms.status)}
+                      <Chip
+                        label={pms.status}
+                        color={getStatusColor(pms.status) as any}
+                        size="small"
+                      />
+                    </Box>
+                  </TableCell>
+                  <TableCell>{pms.lastSync}</TableCell>
+                  <TableCell>{pms.recordsProcessed?.toLocaleString?.() ?? pms.recordsProcessed}</TableCell>
+                  <TableCell>
+                    <Typography color={pms.errors > 0 ? 'error' : 'success'}>
+                      {pms.errors}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{pms.version}</TableCell>
+                  <TableCell>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleViewDetails(pms)}
+                      color="primary"
+                    >
+                      <ViewIcon />
+                    </IconButton>
+                    <IconButton size="small" color="primary">
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton size="small" color="error">
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
       {/* PMS Details Dialog */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>
@@ -231,7 +214,7 @@ const IntegratedPMS: React.FC = () => {
                 <Typography variant="subtitle2" color="textSecondary">
                   Records Processed
                 </Typography>
-                <Typography variant="body1">{selectedPMS.recordsProcessed.toLocaleString()}</Typography>
+                <Typography variant="body1">{selectedPMS.recordsProcessed?.toLocaleString?.() ?? selectedPMS.recordsProcessed}</Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="subtitle2" color="textSecondary">

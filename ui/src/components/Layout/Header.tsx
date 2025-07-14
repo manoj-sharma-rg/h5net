@@ -9,6 +9,7 @@ const Header: React.FC = () => {
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'Onboard PMS', path: '/onboard' },
     { label: 'Integrated PMS', path: '/integrated-pms' },
+    { label: 'Feed Test', path: '/feed-test' },
   ];
 
   return (
