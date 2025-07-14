@@ -19,17 +19,22 @@ ui wizard start
 make sure backend api run on .net8. 
 frontend ui vite with react 18- modularize, add pages like dashboard and integrated pms tabs
 api add pdf support
+Setting up the CI/CD pipeline
+- Created GitHub Actions workflows:
+  - ci-cd.yml (main pipeline with testing, building, deployment)
+  - pr-check.yml (pull request validation)
+  - dependency-check.yml (weekly dependency updates)
+- Added comprehensive CI/CD documentation
+- Created environment setup scripts for GitHub CLI
+lambda support
 
 ======================================================
 
-
-Setting up the CI/CD pipeline
-api gateway : new or old
-db entry for integration
-pricing type support
-attributes support
-add a tab in wizard before last page
-
+- api gateway : new or old
+- db entry for integration
+- pricing type support
+- attributes support
+- add a tab in wizard before last page
 
 ======================================================
 dotnet run --project api

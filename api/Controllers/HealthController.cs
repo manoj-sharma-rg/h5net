@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
+using System.IO;
 
 namespace api.Controllers;
 
@@ -153,8 +154,8 @@ public class HealthController : ControllerBase
             var testPath = Path.Combine("pms", "health-check");
             Directory.CreateDirectory(testPath);
             var testFile = Path.Combine(testPath, "test.txt");
-            File.WriteAllText(testFile, "health check");
-            File.Delete(testFile);
+           System.IO. File.WriteAllText(testFile, "health check");
+          System.IO.  File.Delete(testFile);
             Directory.Delete(testPath);
             return true;
         }

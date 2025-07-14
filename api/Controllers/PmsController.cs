@@ -102,6 +102,8 @@ public class PmsController : ControllerBase
             if (feedData.Trim().StartsWith("{"))
             {
                 var jsonData = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(feedData);
+                if (jsonData == null)
+                    throw new Exception("Failed to parse feedData as JSON.");
                 var translatedJson = new Dictionary<string, object>();
                 
                 foreach (var kvp in jsonData)

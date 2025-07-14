@@ -22,7 +22,7 @@ public class RateLimitingMiddleware
     {
         var clientId = GetClientIdentifier(context);
         
-        if (!await IsRateLimitExceeded(clientId))
+        if (!IsRateLimitExceeded(clientId))
         {
             await _next(context);
         }
@@ -58,7 +58,7 @@ public class RateLimitingMiddleware
         return $"ip:{ipAddress}:{userAgent}";
     }
 
-    private async Task<bool> IsRateLimitExceeded(string clientId)
+    private bool IsRateLimitExceeded(string clientId)
     {
         var now = DateTime.UtcNow;
         var rateLimitInfo = _rateLimitStore.GetOrAdd(clientId, _ => new RateLimitInfo());

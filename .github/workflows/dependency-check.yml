@@ -1,0 +1,127 @@
+name: Dependency Check
+
+on:
+  schedule:
+    # Run weekly on Sundays at 2 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch: # Allow manual trigger
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '18.x'
+
+jobs:
+  check-dependencies:
+    name: Check Dependencies
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: ui/package-lock.json
+        
+    - name: Check .NET dependencies
+      run: |
+        echo "Checking .NET dependencies..."
+        dotnet list api/api.csproj package --outdated
+        dotnet list api/api.csproj package --vulnerable
+        
+    - name: Check npm dependencies
+      working-directory: ui
+      run: |
+        echo "Checking npm dependencies..."
+        npm audit
+        npm outdated
+        
+    - name: Create dependency report
+      run: |
+        echo "Creating dependency report..."
+        echo "# Dependency Report - $(date)" > dependency-report.md
+        echo "" >> dependency-report.md
+        echo "## .NET Dependencies" >> dependency-report.md
+        dotnet list api/api.csproj package --outdated >> dependency-report.md 2>&1 || true
+        echo "" >> dependency-report.md
+        echo "## NPM Dependencies" >> dependency-report.md
+        cd ui && npm outdated >> ../dependency-report.md 2>&1 || true
+        cd ..
+        
+    - name: Upload dependency report
+      uses: actions/upload-artifact@v4
+      with:
+        name: dependency-report
+        path: dependency-report.md
+        retention-days: 7
+
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+        
+    - name: Run npm audit
+      working-directory: ui
+      run: npm audit --audit-level=moderate
+        
+    - name: Run .NET security check
+      run: |
+        dotnet list api/api.csproj package --vulnerable
+        # Check for known vulnerabilities in .NET packages
+
+  auto-update-dependencies:
+    name: Auto-Update Dependencies
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' # Only on manual trigger
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        cache-dependency-path: ui/package-lock.json
+        
+    - name: Update npm dependencies
+      working-directory: ui
+      run: |
+        # Update patch and minor versions only
+        npm update
+        npm audit fix
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Auto-update dependencies" && git push) 
