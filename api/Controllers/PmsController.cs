@@ -21,12 +21,17 @@ public class PmsController : ControllerBase
         _logger.LogInformation("[{Timestamp}] Received PMS feed request for PMS code: {PmsCode}", 
             DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode);
 
+        var statsPath = Path.Combine("pms", pmscode, "stats.json");
+        var stats = Stats.Load(statsPath);
+
         try
         {
             if (string.IsNullOrWhiteSpace(request.FeedData))
             {
                 _logger.LogWarning("[{Timestamp}] Empty PMS feed received for {PmsCode}", 
                     DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode);
+                stats.Errors++;
+                stats.Save(statsPath);
                 return BadRequest("PMS feed is required in the request body.");
             }
 
@@ -35,6 +40,8 @@ public class PmsController : ControllerBase
             {
                 _logger.LogWarning("[{Timestamp}] Invalid PMS code received: {PmsCode}", 
                     DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode);
+                stats.Errors++;
+                stats.Save(statsPath);
                 return BadRequest("Invalid PMS code. Only letters, numbers, dash, and underscore are allowed.");
             }
 
@@ -44,12 +51,18 @@ public class PmsController : ControllerBase
             _logger.LogInformation("[{Timestamp}] Successfully processed PMS feed for {PmsCode}", 
                 DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode);
 
+            stats.RecordsProcessed++;
+            stats.LastSync = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff");
+            stats.Save(statsPath);
+
             return Ok(new { translatedData });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "[{Timestamp}] Error processing PMS feed for {PmsCode}: {ErrorMessage}", 
                 DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode, ex.Message);
+            stats.Errors++;
+            stats.Save(statsPath);
             return Problem($"Error processing PMS feed: {ex.Message}");
         }
     }
@@ -180,6 +193,24 @@ public class PmsController : ControllerBase
             foreach (var dir in Directory.GetDirectories(pmsRoot))
             {
                 var manifestPath = Path.Combine(dir, "manifest.json");
+                var statsPath = Path.Combine(dir, "stats.json");
+                int recordsProcessed = 0;
+                int errors = 0;
+                string lastSync = null;
+                if (System.IO.File.Exists(statsPath))
+                {
+                    try
+                    {
+                        var stats = System.Text.Json.JsonSerializer.Deserialize<Stats>(System.IO.File.ReadAllText(statsPath));
+                        if (stats != null)
+                        {
+                            recordsProcessed = stats.RecordsProcessed;
+                            errors = stats.Errors;
+                            lastSync = stats.LastSync;
+                        }
+                    }
+                    catch { }
+                }
                 if (System.IO.File.Exists(manifestPath))
                 {
                     try
@@ -193,9 +224,9 @@ public class PmsController : ControllerBase
                                 code = manifest.pmsCode,
                                 name = manifest.pmsName,
                                 status = manifest.status,
-                                lastSync = manifest.deployedAt,
-                                recordsProcessed = manifest.mappingsCount, // Placeholder
-                                errors = 0, // Placeholder
+                                lastSync = lastSync ?? manifest.deployedAt,
+                                recordsProcessed = recordsProcessed,
+                                errors = errors,
                                 version = manifest.version
                             });
                         }
@@ -216,6 +247,30 @@ public class PmsController : ControllerBase
         public int mappingsCount { get; set; }
         public string endpoint { get; set; } = string.Empty;
         public string version { get; set; } = string.Empty;
+    }
+
+    public class Stats
+    {
+        public int RecordsProcessed { get; set; } = 0;
+        public int Errors { get; set; } = 0;
+        public string LastSync { get; set; } = null;
+
+        public static Stats Load(string path)
+        {
+            if (System.IO.File.Exists(path))
+            {
+                try
+                {
+                    return System.Text.Json.JsonSerializer.Deserialize<Stats>(System.IO.File.ReadAllText(path)) ?? new Stats();
+                }
+                catch { return new Stats(); }
+            }
+            return new Stats();
+        }
+        public void Save(string path)
+        {
+            System.IO.File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(this, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+        }
     }
 }
 

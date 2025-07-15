@@ -1,9 +1,19 @@
 using api.Middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace api;
 
 public class Startup
 {
+    private readonly IConfiguration _configuration;
+
+    public Startup(IConfiguration configuration)
+    {
+        _configuration = configuration;
+    }
+
     public void ConfigureServices(IServiceCollection services)
     {
         services.AddControllers();
@@ -19,6 +29,30 @@ public class Startup
                 Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
                 Scheme = "Bearer"
             });
+        });
+
+        // Add JWT authentication
+        var jwtKey = _configuration["Jwt:Key"] ?? "default-secret-key-change-in-production";
+        var jwtIssuer = _configuration["Jwt:Issuer"] ?? "h5net-pms";
+        var jwtAudience = _configuration["Jwt:Audience"] ?? "h5net-pms-api";
+        services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer(options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = jwtIssuer,
+                ValidAudience = jwtAudience,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+                ClockSkew = TimeSpan.Zero
+            };
         });
 
         // Add CORS with configuration
@@ -72,8 +106,12 @@ public class Startup
         // Add rate limiting middleware
         app.UseRateLimiting();
 
-        // Add health check endpoints
+        // Add authentication/authorization middleware
         app.UseRouting();
+        app.UseAuthentication();
+        app.UseAuthorization();
+
+        // Add health check endpoints
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapHealthChecks("/health");

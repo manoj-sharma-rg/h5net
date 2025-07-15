@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
+using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 
 namespace api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class MappingController : ControllerBase
 {
     private readonly ILogger<MappingController> _logger;
@@ -180,6 +183,104 @@ public class MappingController : ControllerBase
         }
         
         return suggestions.Take(5).ToArray(); // Limit to 5 suggestions
+    }
+
+    [HttpGet]
+    public IActionResult ListAllIntegrations()
+    {
+        var pmsRoot = Path.Combine("..", "pms");
+        var result = new List<object>();
+        if (Directory.Exists(pmsRoot))
+        {
+            foreach (var dir in Directory.GetDirectories(pmsRoot))
+            {
+                var manifestPath = Path.Combine(dir, "manifest.json");
+                if (System.IO.File.Exists(manifestPath))
+                {
+                    try
+                    {
+                        var manifestJson = System.IO.File.ReadAllText(manifestPath);
+                        var manifest = System.Text.Json.JsonSerializer.Deserialize<PmsManifest>(manifestJson);
+                        if (manifest != null)
+                        {
+                            result.Add(manifest);
+                        }
+                    }
+                    catch { /* skip invalid manifests */ }
+                }
+            }
+        }
+        return Ok(result);
+    }
+
+    [HttpGet("{pmscode}")]
+    public IActionResult GetIntegration(string pmscode)
+    {
+        var manifestPath = Path.Combine("..", "pms", pmscode, "manifest.json");
+        if (!System.IO.File.Exists(manifestPath))
+            return NotFound($"PMS integration '{pmscode}' not found.");
+        try
+        {
+            var manifestJson = System.IO.File.ReadAllText(manifestPath);
+            var manifest = System.Text.Json.JsonSerializer.Deserialize<PmsManifest>(manifestJson);
+            return Ok(manifest);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error reading manifest for {PmsCode}", pmscode);
+            return Problem($"Error reading manifest: {ex.Message}");
+        }
+    }
+
+    [HttpPut("{pmscode}")]
+    public IActionResult UpdateIntegration(string pmscode, [FromBody] PmsManifest updated)
+    {
+        var manifestPath = Path.Combine("..", "pms", pmscode, "manifest.json");
+        if (!System.IO.File.Exists(manifestPath))
+            return NotFound($"PMS integration '{pmscode}' not found.");
+        try
+        {
+            var manifestJson = System.Text.Json.JsonSerializer.Serialize(updated, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            System.IO.File.WriteAllText(manifestPath, manifestJson);
+            _logger.LogInformation("Updated manifest for {PmsCode}", pmscode);
+            return Ok(updated);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating manifest for {PmsCode}", pmscode);
+            return Problem($"Error updating manifest: {ex.Message}");
+        }
+    }
+
+    [HttpDelete("{pmscode}")]
+    public IActionResult DeleteIntegration(string pmscode)
+    {
+        var pmsDir = Path.Combine("..", "pms", pmscode);
+        if (!Directory.Exists(pmsDir))
+            return NotFound($"PMS integration '{pmscode}' not found.");
+        try
+        {
+            Directory.Delete(pmsDir, true);
+            _logger.LogInformation("Deleted PMS integration folder for {PmsCode}", pmscode);
+            return Ok(new { success = true, message = $"PMS integration '{pmscode}' deleted." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting PMS integration {PmsCode}", pmscode);
+            return Problem($"Error deleting PMS integration: {ex.Message}");
+        }
+    }
+
+    public class PmsManifest
+    {
+        public string deploymentId { get; set; } = string.Empty;
+        public string pmsCode { get; set; } = string.Empty;
+        public string pmsName { get; set; } = string.Empty;
+        public string status { get; set; } = string.Empty;
+        public string deployedAt { get; set; } = string.Empty;
+        public int mappingsCount { get; set; }
+        public string endpoint { get; set; } = string.Empty;
+        public string version { get; set; } = string.Empty;
     }
 }
 
