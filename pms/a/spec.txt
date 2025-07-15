@@ -1,6 +1,0 @@
-﻿PDF file uploaded: ReservHotel Developer Documentation.pdf
-
-Note: PDF text extraction requires backend support.
-Please paste the PMS specification content directly in the text area below, or upload a JSON/TXT file instead.
-
-File size: 1545.12 KB

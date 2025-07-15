@@ -1,0 +1,100 @@
+{
+  "version": "1.0.0",
+  "OTA_HotelAvailNotifRQ": {
+    "AvailStatusMessages": {
+      "AvailStatusMessage": {
+        "BookingLimitMessageType": "string",
+        "BookingLimit": "int",
+        "StatusApplicationControl": {
+          "Start": "date",
+          "End": "date",
+          "InvCode": "string",
+          "RatePlanCode": "string",
+          "Mon": "bool",
+          "Tue": "bool",
+          "Weds": "bool",
+          "Thur": "bool",
+          "Fri": "bool",
+          "Sat": "bool",
+          "Sun": "bool"
+        },
+        "LengthsOfStay": {
+          "LengthOfStay": {
+            "MinMaxMessageType": "string",
+            "TimeUnit": "string",
+            "Time": "int",
+            "LOS_Pattern": {
+              "FullPatternLOS": "string"
+            }
+          }
+        },
+        "RestrictionStatus": {
+          "Status": "string",
+          "MinAdvancedBookingOffset": "int",
+          "MaxAdvancedBookingOffset": "int"
+        }
+      }
+    }
+  },
+  "OTA_HotelRateAmountNotifRQ": {
+    "RateAmountMessages": {
+      "RateAmountMessage": {
+        "StatusApplicationControl": {
+          "InvCode": "string",
+          "RatePlanCode": "string",
+          "End": "date",
+          "Start": "date"
+        },
+        "Rates": {
+          "Rate": {
+            "CurrencyCode": "string",
+            "UnitMultiplier": "int",
+            "BaseByGuestAmts": {
+              "BaseByGuestAmt": {
+                "AmountBeforeTax": "decimal",
+                "AmountAfterTax": "decimal",
+                "AgeQualifyingCode": "string",
+                "NumberOfGuests": "int"
+              }
+            },
+            "GuaranteePolicies": {
+              "GuaranteePolicy": {
+                "GuaranteeCode": "string"
+              }
+            },
+            "CancelPolicies": {
+              "CancelPenalty": {
+                "NonRefundable": "bool",
+                "Deadline": {
+                  "AbsoluteDeadline": "datetime",
+                  "OffsetDropTime": "string",
+                  "OffsetTimeUnit": "string",
+                  "OffsetUnitMultiplier": "int"
+                },
+                "AmountPercent": {
+                  "NmbrOfNights": "int",
+                  "Amount": "decimal",
+                  "Percent": "decimal",
+                  "CurrencyCode": "string",
+                  "TaxInclusive": "bool",
+                  "FeesInclusive": "bool",
+                  "BasisType": "string"
+                },
+                "PenaltyDescription": {
+                  "Text": "string"
+                }
+              }
+            },
+            "MealsIncluded": {
+              "MealPlanCodes": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "OTA_HotelARINotifRQ": {
+    "RateAmountMessages": "see OTA_HotelRateAmountNotifRQ.RateAmountMessages",
+    "AvailStatusMessages": "see OTA_HotelAvailNotifRQ.AvailStatusMessages"
+  }
+} 

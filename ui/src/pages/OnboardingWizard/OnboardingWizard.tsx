@@ -31,6 +31,7 @@ import {
   PlayArrow as PlayArrowIcon,
   CheckCircle as CheckCircleIcon,
 } from '@mui/icons-material';
+import { apiFetch } from '../../utils/api';
 
 interface MappingSuggestion {
   sourceField: string;
@@ -83,7 +84,7 @@ const OnboardingWizard: React.FC = () => {
       // Generate mapping suggestions
       setIsLoading(true);
       try {
-        const response = await fetch(`http://localhost:8000/api/mapping/${pmsCode}`, {
+        const response = await apiFetch(`/api/mapping/${pmsCode}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -163,7 +164,7 @@ const OnboardingWizard: React.FC = () => {
     
     setIsGeneratingSuggestions(true);
     try {
-      const response = await fetch('http://localhost:8000/api/mapping/ai-suggestions', {
+      const response = await apiFetch('/api/mapping/ai-suggestions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -241,9 +242,9 @@ const OnboardingWizard: React.FC = () => {
       // For now, send PDF to backend for extraction
       // This is more reliable than client-side extraction
       const formData = new FormData();
-      formData.append('pdf', file);
+      formData.append('file', file);
       
-      const response = await fetch('http://localhost:8000/api/file/extract-pdf', {
+      const response = await apiFetch('/api/file/extract-pdf', {
         method: 'POST',
         body: formData,
       });
@@ -301,7 +302,7 @@ const OnboardingWizard: React.FC = () => {
     try {
       console.log(`Testing translation for PMS: ${pmsCode}`);
       
-      const response = await fetch(`http://localhost:8000/api/pms/${pmsCode}/test`, {
+      const response = await apiFetch(`/api/pms/${pmsCode}/test`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -392,7 +393,7 @@ Please check:
       console.log('Deployment payload:', deploymentPayload);
       
       // Send deployment request to backend
-      const response = await fetch('http://localhost:8000/api/deployment/deploy', {
+      const response = await apiFetch('/api/deployment/deploy', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -469,7 +470,7 @@ You can now start sending PMS feeds to: /api/pms/${pmsCode}`);
   const checkBackendStatus = async () => {
     setBackendStatus('checking');
     try {
-      const response = await fetch('http://localhost:8000/api/mapping/ai-suggestions', {
+      const response = await apiFetch('/api/mapping/ai-suggestions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pmsCode: 'test', pmsSpec: 'test', unmappedFields: [] }),
@@ -997,7 +998,7 @@ You can now start sending PMS feeds to: /api/pms/${pmsCode}`);
                       };
                       
                       try {
-                        const response = await fetch('http://localhost:8000/api/deployment/deploy', {
+                        const response = await apiFetch('/api/deployment/deploy', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
                           body: JSON.stringify(testData),

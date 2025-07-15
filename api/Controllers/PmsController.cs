@@ -53,7 +53,7 @@ public class PmsController : ControllerBase
 
             // === SCHEMA VALIDATION ===
             var pmsFolder = Path.Combine("pms", pmscode);
-            string validationError = null;
+            string? validationError = null;
             bool isValid = true;
             if (request.FeedData.TrimStart().StartsWith("{"))
             {
@@ -72,16 +72,17 @@ public class PmsController : ControllerBase
                 if (System.IO.File.Exists(xsdPath))
                 {
                     var xsd = await System.IO.File.ReadAllTextAsync(xsdPath);
-                    (isValid, validationError) = _schemaValidator.ValidateXml(request.FeedData, xsd);
+                    (isValid, validationError) = _schemaValidator.ValidateXml(request.FeedData, xsd!);
                 }
             }
             if (!isValid)
             {
+                var errorMsg = validationError ?? "Unknown schema validation error";
                 _logger.LogWarning("[{Timestamp}] Schema validation failed for {PmsCode}: {Error}", 
-                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode, validationError);
+                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode, errorMsg);
                 stats.Errors++;
                 stats.Save(statsPath);
-                return BadRequest($"Schema validation failed: {validationError}");
+                return BadRequest($"Schema validation failed: {errorMsg}");
             }
             // === END SCHEMA VALIDATION ===
 

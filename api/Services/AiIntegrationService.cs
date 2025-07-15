@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using OpenAI_API;
 using OpenAI_API.Completions;
+using System.IO;
 
 namespace api.Services
 {
@@ -24,9 +25,16 @@ namespace api.Services
             _openAiApi = new OpenAIAPI(apiKey);
         }
 
+        private static string LoadRgbridgeSchema()
+        {
+            var path = Path.Combine("common", "rgbridge-schema.json");
+            return File.Exists(path) ? File.ReadAllText(path) : "";
+        }
+
         public async Task<List<string>> GetMappingSuggestionsAsync(string pmsSpec, string[] fieldNames)
         {
-            var prompt = $"Given the following PMS spec:\n{pmsSpec}\n\nSuggest the best RGBridge field mapping for each of these PMS fields: {string.Join(", ", fieldNames)}. Return only the suggested RGBridge field for each, in order.";
+            var rgbridgeSchema = LoadRgbridgeSchema();
+            var prompt = $"RGBridge schema:\n{rgbridgeSchema}\n\nGiven the following PMS spec:\n{pmsSpec}\n\nSuggest the best RGBridge field mapping for each of these PMS fields: {string.Join(", ", fieldNames)}. Return only the suggested RGBridge field for each, in order.";
             var result = await _openAiApi.Completions.CreateCompletionAsync(new CompletionRequest
             {
                 Prompt = prompt,
@@ -48,7 +56,8 @@ namespace api.Services
 
         public async Task<string> GenerateTranslatorCodeAsync(string pmsSpec, string pmsCode)
         {
-            var prompt = $"Given the following PMS spec:\n{pmsSpec}\n\nGenerate a C# class implementing IPmsTranslator for PMS code '{pmsCode}'. The class should translate PMS messages to RGBridge format.";
+            var rgbridgeSchema = LoadRgbridgeSchema();
+            var prompt = $"RGBridge schema:\n{rgbridgeSchema}\n\nGiven the following PMS spec:\n{pmsSpec}\n\nGenerate a C# class implementing IPmsTranslator for PMS code '{pmsCode}'. The class should translate PMS messages to RGBridge format.";
             var result = await _openAiApi.Completions.CreateCompletionAsync(new CompletionRequest
             {
                 Prompt = prompt,
@@ -61,7 +70,8 @@ namespace api.Services
 
         public async Task<List<string>> GenerateTestCasesAsync(string pmsSpec, object mappings)
         {
-            var prompt = $"Given the following PMS spec:\n{pmsSpec}\n\nAnd these field mappings:\n{System.Text.Json.JsonSerializer.Serialize(mappings)}\n\nGenerate 3 sample PMS payloads and their expected RGBridge translations.";
+            var rgbridgeSchema = LoadRgbridgeSchema();
+            var prompt = $"RGBridge schema:\n{rgbridgeSchema}\n\nGiven the following PMS spec:\n{pmsSpec}\n\nAnd these field mappings:\n{System.Text.Json.JsonSerializer.Serialize(mappings)}\n\nGenerate 3 sample PMS payloads and their expected RGBridge translations.";
             var result = await _openAiApi.Completions.CreateCompletionAsync(new CompletionRequest
             {
                 Prompt = prompt,
