@@ -32,8 +32,7 @@ namespace api.Services
                 Prompt = prompt,
                 Model = _model,
                 MaxTokens = 256,
-                Temperature = 0.2,
-                N = 1
+                Temperature = 0.2
             });
             var suggestions = new List<string>();
             if (result != null && result.Completions.Count > 0)
@@ -55,8 +54,7 @@ namespace api.Services
                 Prompt = prompt,
                 Model = _model,
                 MaxTokens = 1024,
-                Temperature = 0.2,
-                N = 1
+                Temperature = 0.2
             });
             return result?.Completions[0].Text ?? string.Empty;
         }
@@ -69,8 +67,7 @@ namespace api.Services
                 Prompt = prompt,
                 Model = _model,
                 MaxTokens = 512,
-                Temperature = 0.2,
-                N = 1
+                Temperature = 0.2
             });
             var testCases = new List<string>();
             if (result != null && result.Completions.Count > 0)

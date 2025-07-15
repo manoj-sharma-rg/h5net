@@ -30,7 +30,12 @@ namespace api.Services
             {
                 try
                 {
-                    var instance = (IPmsTranslator)Activator.CreateInstance(type);
+                    var instance = Activator.CreateInstance(type) as IPmsTranslator;
+                    if (instance == null)
+                    {
+                        _logger.LogWarning("Could not instantiate translator: {Type}", type.FullName);
+                        continue;
+                    }
                     if (!_translators.TryAdd(instance.PmsCode.ToLowerInvariant(), instance))
                     {
                         _logger.LogWarning("Duplicate translator for PMS code: {PmsCode}", instance.PmsCode);
@@ -52,7 +57,7 @@ namespace api.Services
             try { return assembly.GetTypes(); } catch { return Array.Empty<Type>(); }
         }
 
-        public IPmsTranslator GetTranslator(string pmsCode)
+        public IPmsTranslator? GetTranslator(string pmsCode)
         {
             if (string.IsNullOrWhiteSpace(pmsCode)) return null;
             _translators.TryGetValue(pmsCode.ToLowerInvariant(), out var translator);

@@ -1,0 +1,32 @@
+[
+  {
+    "input": {
+      "roomType": "Deluxe King",
+      "ratePlan": "Standard Rate",
+      "startDate": "2024-01-15",
+      "endDate": "2024-01-17",
+      "guestName": "John Smith",
+      "checkInTime": "14:00",
+      "checkOutTime": "11:00",
+      "roomNumber": "101",
+      "totalAmount": 299.99,
+      "paymentMethod": "Credit Card",
+      "specialRequests": "Late check-in requested",
+      "loyaltyPoints": 1200
+    },
+    "expected": {
+      "InvCode": "Deluxe King",
+      "RatePlanCode": "Standard Rate",
+      "Start": "2024-01-15",
+      "End": "2024-01-17",
+      "GuestName": "John Smith",
+      "CheckInTime": "14:00",
+      "CheckOutTime": "11:00",
+      "RoomNumber": "101",
+      "TotalAmount": 299.99,
+      "PaymentMethod": "Credit Card",
+      "SpecialRequests": "Late check-in requested",
+      "LoyaltyPoints": 1200
+    }
+  }
+] 

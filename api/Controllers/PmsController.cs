@@ -139,7 +139,6 @@ public class PmsController : ControllerBase
             // Load mapping configuration
             var mappingPath = Path.Combine("pms", pmscode, "mapping.json");
             var mappings = new Dictionary<string, string>();
-            
             if (System.IO.File.Exists(mappingPath))
             {
                 var mappingJson = await System.IO.File.ReadAllTextAsync(mappingPath);
@@ -148,10 +147,10 @@ public class PmsController : ControllerBase
                 {
                     foreach (var mapping in mappingData.Mappings)
                     {
-                        mappings[mapping.SourceField] = mapping.TargetField;
+                        if (mapping?.SourceField != null && mapping?.TargetField != null)
+                            mappings[mapping.SourceField] = mapping.TargetField;
                     }
                 }
-                
                 _logger.LogInformation("Loaded {MappingCount} mappings for {PmsCode}", mappings.Count, pmscode);
             }
             else
@@ -159,10 +158,8 @@ public class PmsController : ControllerBase
                 _logger.LogWarning("Mapping file not found for {PmsCode}, using fallback translation", pmscode);
                 return FallbackTranslation(pmscode, feedData);
             }
-
             // Apply mappings to the feed data
             var translatedData = ApplyMappings(feedData, mappings, pmscode);
-            
             return translatedData;
         }
         catch (Exception ex)
@@ -261,7 +258,7 @@ public class PmsController : ControllerBase
                 var statsPath = Path.Combine(dir, "stats.json");
                 int recordsProcessed = 0;
                 int errors = 0;
-                string lastSync = null;
+                string? lastSync = null;
                 if (System.IO.File.Exists(statsPath))
                 {
                     try
@@ -318,7 +315,7 @@ public class PmsController : ControllerBase
     {
         public int RecordsProcessed { get; set; } = 0;
         public int Errors { get; set; } = 0;
-        public string LastSync { get; set; } = null;
+        public string? LastSync { get; set; } = null;
 
         public static Stats Load(string path)
         {

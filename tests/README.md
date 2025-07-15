@@ -183,3 +183,24 @@ When adding new tests:
 3. Add documentation to this README
 4. Update the test runner if needed
 5. Test on multiple platforms if possible 
+
+## Automated Plugin Tests
+
+### AI-Generated Test Cases
+- For each PMS integration, add a `testcases.json` file in the corresponding `pms/{code}/` folder.
+- Each test case should have an `input` (PMS feed as JSON) and `expected` (expected RGBridge output as JSON or XML).
+- Example format:
+
+```
+[
+  {
+    "input": { "roomType": "Deluxe King", ... },
+    "expected": { "InvCode": "Deluxe King", ... }
+  }
+]
+```
+
+### Running Plugin Tests
+- (Recommended) Add or run a test script that loads all translators via the plugin system and tests them with their `testcases.json`.
+- To add new test cases, update the `testcases.json` file for the PMS.
+- To add a new PMS, create the folder, translator, and test cases as above. 
