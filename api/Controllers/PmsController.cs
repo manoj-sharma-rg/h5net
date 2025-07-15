@@ -72,7 +72,7 @@ public class PmsController : ControllerBase
                 if (System.IO.File.Exists(xsdPath))
                 {
                     var xsd = await System.IO.File.ReadAllTextAsync(xsdPath);
-                    (isValid, validationError) = _schemaValidator.ValidateXml(request.FeedData, xsd);
+                    (isValid, validationError) = _schemaValidator.ValidateXml(request.FeedData, xsd!);
                 }
             }
             if (!isValid)
