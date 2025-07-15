@@ -242,7 +242,7 @@ const OnboardingWizard: React.FC = () => {
       // For now, send PDF to backend for extraction
       // This is more reliable than client-side extraction
       const formData = new FormData();
-      formData.append('pdf', file);
+      formData.append('file', file);
       
       const response = await apiFetch('/api/file/extract-pdf', {
         method: 'POST',
