@@ -75,6 +75,12 @@ public class Startup
 
         // Register AI Integration Service
         services.AddSingleton<Services.AiIntegrationService>();
+        // Register Schema Validation Service
+        services.AddSingleton<Services.SchemaValidationService>();
+        // Register RGBridge Sender Service
+        services.AddSingleton<Services.RgbridgeSenderService>();
+        // Register Translator Registry
+        services.AddSingleton<Services.TranslatorRegistry>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)

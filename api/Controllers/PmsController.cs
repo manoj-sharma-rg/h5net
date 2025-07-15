@@ -9,10 +9,16 @@ namespace api.Controllers;
 public class PmsController : ControllerBase
 {
     private readonly ILogger<PmsController> _logger;
+    private readonly Services.SchemaValidationService _schemaValidator;
+    private readonly Services.RgbridgeSenderService _rgbridgeSender;
+    private readonly Services.TranslatorRegistry _translatorRegistry;
 
-    public PmsController(ILogger<PmsController> logger)
+    public PmsController(ILogger<PmsController> logger, Services.SchemaValidationService schemaValidator, Services.RgbridgeSenderService rgbridgeSender, Services.TranslatorRegistry translatorRegistry)
     {
         _logger = logger;
+        _schemaValidator = schemaValidator;
+        _rgbridgeSender = rgbridgeSender;
+        _translatorRegistry = translatorRegistry;
     }
 
     [HttpPost("{pmscode}")]
@@ -45,9 +51,60 @@ public class PmsController : ControllerBase
                 return BadRequest("Invalid PMS code. Only letters, numbers, dash, and underscore are allowed.");
             }
 
+            // === SCHEMA VALIDATION ===
+            var pmsFolder = Path.Combine("pms", pmscode);
+            string validationError = null;
+            bool isValid = true;
+            if (request.FeedData.TrimStart().StartsWith("{"))
+            {
+                // JSON: look for schema.json
+                var schemaPath = Path.Combine(pmsFolder, "schema.json");
+                if (System.IO.File.Exists(schemaPath))
+                {
+                    var schema = await System.IO.File.ReadAllTextAsync(schemaPath);
+                    (isValid, validationError) = _schemaValidator.ValidateJson(request.FeedData, schema);
+                }
+            }
+            else if (request.FeedData.TrimStart().StartsWith("<"))
+            {
+                // XML: look for schema.xsd
+                var xsdPath = Path.Combine(pmsFolder, "schema.xsd");
+                if (System.IO.File.Exists(xsdPath))
+                {
+                    var xsd = await System.IO.File.ReadAllTextAsync(xsdPath);
+                    (isValid, validationError) = _schemaValidator.ValidateXml(request.FeedData, xsd);
+                }
+            }
+            if (!isValid)
+            {
+                _logger.LogWarning("[{Timestamp}] Schema validation failed for {PmsCode}: {Error}", 
+                    DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode, validationError);
+                stats.Errors++;
+                stats.Save(statsPath);
+                return BadRequest($"Schema validation failed: {validationError}");
+            }
+            // === END SCHEMA VALIDATION ===
+
             // Try to load and use the generated translator
             var translatedData = await LoadAndUseTranslator(pmscode, request.FeedData);
-            
+
+            // === OUTBOUND RGBridge DELIVERY ===
+            string deliveryStatus = null;
+            if (translatedData.TrimStart().StartsWith("<"))
+            {
+                var (success, response, error) = await _rgbridgeSender.SendXmlAsync(translatedData);
+                if (success)
+                {
+                    deliveryStatus = $"RGBridge delivery successful: {response}";
+                }
+                else
+                {
+                    deliveryStatus = $"RGBridge delivery failed: {error}";
+                    _logger.LogWarning("RGBridge delivery failed for {PmsCode}: {Error}", pmscode, error);
+                }
+            }
+            // === END OUTBOUND RGBridge DELIVERY ===
+
             _logger.LogInformation("[{Timestamp}] Successfully processed PMS feed for {PmsCode}", 
                 DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), pmscode);
 
@@ -55,7 +112,7 @@ public class PmsController : ControllerBase
             stats.LastSync = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss.fff");
             stats.Save(statsPath);
 
-            return Ok(new { translatedData });
+            return Ok(new { translatedData, deliveryStatus });
         }
         catch (Exception ex)
         {
@@ -69,6 +126,14 @@ public class PmsController : ControllerBase
 
     private async Task<string> LoadAndUseTranslator(string pmscode, string feedData)
     {
+        // Try plugin auto-discovery first
+        var plugin = _translatorRegistry.GetTranslator(pmscode);
+        if (plugin != null)
+        {
+            _logger.LogInformation("Using plugin translator for PMS code: {PmsCode}", pmscode);
+            return await plugin.TranslateToRgbridgeAsync(feedData);
+        }
+        // Fallback to mapping logic
         try
         {
             // Load mapping configuration
