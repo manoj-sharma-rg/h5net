@@ -72,6 +72,9 @@ public class Startup
 
         // Add rate limiting
         services.AddMemoryCache();
+
+        // Register AI Integration Service
+        services.AddSingleton<Services.AiIntegrationService>();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
